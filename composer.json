@@ -42,6 +42,12 @@
             "Tests\\": "tests/"
         }
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/yezzmedia/laravel-foundation.git"
+        }
+    ],
     "scripts": {
         "test": "vendor/bin/pest",
         "analyse": "vendor/bin/phpstan analyse --memory-limit=1G",
