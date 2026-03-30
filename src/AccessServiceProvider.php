@@ -9,6 +9,7 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 use YezzMedia\Access\Contracts\AuthorizationAuditWriter;
 use YezzMedia\Access\Support\NullAuthorizationAuditWriter;
 use YezzMedia\Access\Support\PermissionSyncService;
+use YezzMedia\Access\Support\RoleManager;
 use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
 
 /**
@@ -27,6 +28,7 @@ class AccessServiceProvider extends PackageServiceProvider
     {
         $this->app->singleton(AuthorizationAuditWriter::class, static fn (): AuthorizationAuditWriter => new NullAuthorizationAuditWriter);
         $this->app->singleton(PermissionSyncService::class);
+        $this->app->singleton(RoleManager::class);
     }
 
     public function packageBooted(): void
