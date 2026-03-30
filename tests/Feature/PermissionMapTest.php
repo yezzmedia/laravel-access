@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Spatie\Permission\Models\Permission;
 use YezzMedia\Access\Data\RoleDefinition;
+use YezzMedia\Access\Support\PermissionCacheManager;
 use YezzMedia\Access\Support\PermissionMap;
 use YezzMedia\Access\Support\PermissionSyncService;
 use YezzMedia\Access\Support\RoleManager;
@@ -104,4 +105,67 @@ it('can check whether a permission exists in the derived map', function (): void
     expect($map->has('content.pages.publish'))->toBeTrue()
         ->and($map->has('admin.hidden.permission'))->toBeFalse()
         ->and($map->has('content.pages.archive'))->toBeFalse();
+});
+
+it('uses the global permission map cache when enabled until invalidated', function (): void {
+    config()->set('access.cache.permission_map.enabled', true);
+
+    synchronizePermissionMapPackage('yezzmedia/laravel-content', [
+        new PermissionDefinition('content.pages.publish', 'yezzmedia/laravel-content', 'Publish pages'),
+    ]);
+
+    $cache = app(PermissionCacheManager::class);
+    $map = app(PermissionMap::class);
+
+    expect($map->all())->toBe(['content.pages.publish'])
+        ->and(cache()->has($cache->allKey()))->toBeTrue();
+
+    Permission::query()->create([
+        'name' => 'content.pages.archive',
+        'guard_name' => 'web',
+    ]);
+
+    expect($map->all())->toBe(['content.pages.publish']);
+
+    $cache->forgetAll();
+
+    expect($map->all())->toBe([
+        'content.pages.archive',
+        'content.pages.publish',
+    ]);
+});
+
+it('uses the role permission map cache when enabled until role synchronization invalidates it', function (): void {
+    config()->set('access.cache.permission_map.enabled', true);
+
+    synchronizePermissionMapPackage('yezzmedia/laravel-content', [
+        new PermissionDefinition('content.pages.archive', 'yezzmedia/laravel-content', 'Archive pages'),
+        new PermissionDefinition('content.pages.publish', 'yezzmedia/laravel-content', 'Publish pages'),
+    ]);
+
+    $cache = app(PermissionCacheManager::class);
+    $manager = app(RoleManager::class);
+    $manager->syncRole(new RoleDefinition(
+        name: 'content_editor',
+        label: 'Content editor',
+        description: 'Can publish content.',
+        permissionNames: ['content.pages.publish'],
+    ));
+
+    $map = app(PermissionMap::class);
+
+    expect($map->forRole('content_editor'))->toBe(['content.pages.publish'])
+        ->and(cache()->has($cache->roleKey('content_editor')))->toBeTrue();
+
+    $manager->syncRole(new RoleDefinition(
+        name: 'content_editor',
+        label: 'Content editor',
+        description: 'Can publish and archive content.',
+        permissionNames: ['content.pages.publish', 'content.pages.archive'],
+    ));
+
+    expect($map->forRole('content_editor'))->toBe([
+        'content.pages.archive',
+        'content.pages.publish',
+    ]);
 });

@@ -13,6 +13,7 @@ use YezzMedia\Foundation\Contracts\DefinesPermissions;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
 use YezzMedia\Foundation\Data\PackageMetadata;
 use YezzMedia\Foundation\Data\PermissionDefinition;
+use YezzMedia\Foundation\Registry\PermissionRegistry;
 use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
 
 /**
@@ -203,6 +204,42 @@ it('fails fast when a role references unknown permissions', function (): void {
     )))->toThrow(InvalidArgumentException::class, 'Missing: [content.pages.archive]');
 });
 
+it('can seed roles from permission default role hints through the role manager', function (): void {
+    config()->set('access.roles.apply_default_role_hints', true);
+
+    synchronizeRoleTestPermissions('yezzmedia/laravel-content', [
+        new PermissionDefinition(
+            'content.pages.publish',
+            'yezzmedia/laravel-content',
+            'Publish pages',
+            defaultRoleHints: ['content_editor'],
+        ),
+        new PermissionDefinition(
+            'content.pages.archive',
+            'yezzmedia/laravel-content',
+            'Archive pages',
+            defaultRoleHints: ['content_editor', 'content_archivist'],
+        ),
+    ]);
+
+    $roleNames = app(RoleManager::class)->syncRolesFromPermissionHints(app(PermissionRegistry::class)->all());
+
+    expect($roleNames)->toBe(['content_archivist', 'content_editor']);
+
+    $contentEditor = app(RoleManager::class)->findRole('content_editor');
+
+    expect($contentEditor)->toBeInstanceOf(Role::class);
+
+    if (! $contentEditor instanceof Role) {
+        throw new RuntimeException('Expected persisted seeded role instance.');
+    }
+
+    expect($contentEditor->permissions->pluck('name')->sort()->values()->all())->toBe([
+        'content.pages.archive',
+        'content.pages.publish',
+    ]);
+});
+
 it('forgets permission map cache entries after role synchronization', function (): void {
     synchronizeRoleTestPermissions('yezzmedia/laravel-content', [
         new PermissionDefinition('content.pages.publish', 'yezzmedia/laravel-content', 'Publish pages'),
@@ -210,6 +247,7 @@ it('forgets permission map cache entries after role synchronization', function (
 
     $cache = app(PermissionCacheManager::class);
     cache()->put($cache->allKey(), ['stale.permission'], 600);
+    cache()->put($cache->roleKey('content_editor'), ['stale.permission'], 600);
 
     app(RoleManager::class)->syncRole(new RoleDefinition(
         name: 'content_editor',
@@ -218,5 +256,6 @@ it('forgets permission map cache entries after role synchronization', function (
         permissionNames: ['content.pages.publish'],
     ));
 
-    expect(cache()->has($cache->allKey()))->toBeFalse();
+    expect(cache()->has($cache->allKey()))->toBeFalse()
+        ->and(cache()->has($cache->roleKey('content_editor')))->toBeFalse();
 });

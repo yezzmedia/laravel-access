@@ -188,8 +188,10 @@ it('forgets permission map cache entries after user role changes', function (): 
     $user = TestUser::query()->create(['name' => 'Editor']);
 
     cache()->put($cache->allKey(), ['stale.permission'], 600);
+    cache()->put($cache->userKey($user), ['stale.permission'], 600);
 
     app(UserRoleManager::class)->assignRole($user, 'content_editor');
 
-    expect(cache()->has($cache->allKey()))->toBeFalse();
+    expect(cache()->has($cache->allKey()))->toBeFalse()
+        ->and(cache()->has($cache->userKey($user)))->toBeFalse();
 });

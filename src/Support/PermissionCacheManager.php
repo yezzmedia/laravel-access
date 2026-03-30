@@ -9,7 +9,7 @@ use Illuminate\Contracts\Cache\Repository;
 use YezzMedia\Foundation\Support\CacheKeyFactory;
 
 /**
- * Owns explicit invalidation for access permission-map cache entries.
+ * Owns explicit invalidation keys for access permission-map cache entries.
  */
 final class PermissionCacheManager
 {

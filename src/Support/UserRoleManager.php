@@ -35,6 +35,7 @@ final class UserRoleManager
         $this->invokeUserRoleMethod($user, 'assignRole', $role);
         $this->permissionRegistrar->forgetCachedPermissions();
         $this->permissionCache->forgetAll();
+        $this->permissionCache->forgetUser($user);
 
         $this->events->dispatch(new UserRoleAssigned(
             userId: $user->getAuthIdentifier(),
@@ -56,6 +57,7 @@ final class UserRoleManager
         $this->invokeUserRoleMethod($user, 'removeRole', $role);
         $this->permissionRegistrar->forgetCachedPermissions();
         $this->permissionCache->forgetAll();
+        $this->permissionCache->forgetUser($user);
 
         $this->events->dispatch(new UserRoleRemoved(
             userId: $user->getAuthIdentifier(),

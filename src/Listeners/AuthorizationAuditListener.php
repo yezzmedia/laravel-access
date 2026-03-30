@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace YezzMedia\Access\Support;
+namespace YezzMedia\Access\Listeners;
 
 use YezzMedia\Access\Contracts\AuthorizationAuditWriter;
 use YezzMedia\Access\Events\PermissionsSynchronized;

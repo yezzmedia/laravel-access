@@ -12,6 +12,7 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use YezzMedia\Access\Data\RoleDefinition;
 use YezzMedia\Access\Events\RolesSynchronized;
+use YezzMedia\Foundation\Data\PermissionDefinition;
 
 /**
  * Synchronizes explicit role presets against the persisted access runtime.
@@ -27,6 +28,55 @@ final class RoleManager
     public function syncRole(RoleDefinition $role): void
     {
         $this->syncRoles([$role]);
+    }
+
+    /**
+     * @param  iterable<array-key, PermissionDefinition>  $permissions
+     * @return list<string>
+     */
+    public function syncRolesFromPermissionHints(iterable $permissions): array
+    {
+        if (! (bool) config('access.roles.apply_default_role_hints', false)) {
+            return [];
+        }
+
+        $roleDefinitions = [];
+
+        foreach ($permissions as $permission) {
+            foreach ($this->normalizedRoleHints($permission) as $roleName) {
+                $roleDefinitions[$roleName] ??= [];
+                $roleDefinitions[$roleName][] = $permission->name;
+            }
+        }
+
+        if ($roleDefinitions === []) {
+            return [];
+        }
+
+        ksort($roleDefinitions);
+
+        $roles = array_map(
+            function (string $roleName, array $permissionNames): RoleDefinition {
+                $permissionNames = array_values(array_unique($permissionNames));
+                sort($permissionNames);
+
+                return new RoleDefinition(
+                    name: $roleName,
+                    label: (string) str($roleName)->replace('_', ' ')->title(),
+                    description: sprintf('Seeded access role for [%s].', $roleName),
+                    permissionNames: $permissionNames,
+                );
+            },
+            array_keys($roleDefinitions),
+            array_values($roleDefinitions),
+        );
+
+        $this->syncRoles($roles);
+
+        return array_map(
+            static fn (RoleDefinition $role): string => $role->name,
+            $roles,
+        );
     }
 
     /**
@@ -75,6 +125,11 @@ final class RoleManager
 
         $this->permissionRegistrar->forgetCachedPermissions();
         $this->permissionCache->forgetAll();
+
+        foreach ($roleNames as $roleName) {
+            $this->permissionCache->forgetRole($roleName);
+        }
+
         $this->events->dispatch(new RolesSynchronized(
             roleNames: $roleNames,
             createdCount: $createdCount,
@@ -89,6 +144,28 @@ final class RoleManager
             ->where('name', $name)
             ->where('guard_name', (string) config('auth.defaults.guard', 'web'))
             ->first();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function normalizedRoleHints(PermissionDefinition $permission): array
+    {
+        $roleHints = $permission->defaultRoleHints ?? [];
+
+        if ($roleHints === []) {
+            return [];
+        }
+
+        $normalizedRoleHints = array_values(array_filter(array_map(
+            static fn (string $roleName): string => trim($roleName),
+            $roleHints,
+        ), static fn (string $roleName): bool => $roleName !== ''));
+
+        $normalizedRoleHints = array_values(array_unique($normalizedRoleHints));
+        sort($normalizedRoleHints);
+
+        return $normalizedRoleHints;
     }
 
     /**
