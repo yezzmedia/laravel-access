@@ -26,19 +26,20 @@
         "mockery/mockery": "^1.6",
         "orchestra/testbench": "^11.0",
         "pestphp/pest": "^4.0",
-        "pestphp/pest-plugin-laravel": "^4.0"
+        "pestphp/pest-plugin-laravel": "^4.0",
+        "spatie/laravel-activitylog": "^5.0"
     },
     "suggest": {
         "spatie/laravel-activitylog": "Optional audit persistence driver for authorization audit events."
     },
     "autoload": {
         "psr-4": {
-            "YezzMedia\\Access\\": "src/"
+            "YezzMedia\\Access\\": "src/",
+            "YezzMedia\\Access\\Tests\\": "tests/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "YezzMedia\\Access\\Tests\\": "tests/",
             "Tests\\": "tests/"
         }
     },

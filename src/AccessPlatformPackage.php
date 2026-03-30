@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace YezzMedia\Access;
 
+use YezzMedia\Access\Doctor\PermissionsSynchronizedCheck;
+use YezzMedia\Access\Doctor\SuperAdminConfiguredCheck;
 use YezzMedia\Foundation\Contracts\DefinesAuditEvents;
 use YezzMedia\Foundation\Contracts\DefinesPermissions;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
@@ -88,7 +90,10 @@ final class AccessPlatformPackage implements DefinesAuditEvents, DefinesPermissi
      */
     public function doctorChecks(): array
     {
-        return [];
+        return [
+            app(PermissionsSynchronizedCheck::class),
+            app(SuperAdminConfiguredCheck::class),
+        ];
     }
 
     /**
