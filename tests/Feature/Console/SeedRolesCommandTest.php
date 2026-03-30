@@ -55,6 +55,24 @@ it('shows a helpful message when no role definitions are available for seeding',
         ->assertSuccessful();
 });
 
+it('ignores default role hints unless explicit role hint seeding is enabled', function (): void {
+    registerRoleSeedPermissionPackage('yezzmedia/laravel-content', [
+        new PermissionDefinition('content.pages.publish', 'yezzmedia/laravel-content', 'Publish pages', defaultRoleHints: ['content_editor']),
+    ]);
+
+    app(PermissionSyncService::class)->sync();
+
+    $command = artisan('website:seed-roles');
+
+    if (is_int($command)) {
+        throw new RuntimeException('Expected pending command for website:seed-roles.');
+    }
+
+    $command
+        ->expectsOutputToContain('No role definitions available for seeding.')
+        ->assertSuccessful();
+});
+
 it('seeds roles from default role hints when explicit role hint seeding is enabled', function (): void {
     config()->set('access.roles.apply_default_role_hints', true);
 
