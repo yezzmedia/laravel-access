@@ -34,12 +34,12 @@
     },
     "autoload": {
         "psr-4": {
-            "YezzMedia\\Access\\": "src/"
+            "YezzMedia\\Access\\": "src/",
+            "YezzMedia\\Access\\Tests\\": "tests/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "YezzMedia\\Access\\Tests\\": "tests/",
             "Tests\\": "tests/"
         }
     },
