@@ -16,19 +16,27 @@ Use the `foundation-package-development` skill when the work depends on foundati
 
 ## When To Use This Skill
 
-Activate this skill when working inside `yezzmedia/laravel-access`, especially when changing:
+Activate this skill when working inside `yezzmedia/laravel-access`, especially when one of these functions changes:
 
-- `PermissionSyncService`
-- `RoleManager`
-- `UserRoleManager`
-- `SuperAdminGateBootstrapper`
-- `PermissionMap`
-- `PermissionCacheManager`
-- access runtime events
-- audit integration
-- access console commands
-- doctor checks
-- access package tests and fixtures
+- synchronize declared foundation permissions into persistent storage
+- synchronize one package's permissions without touching others
+- seed or synchronize role presets from explicit definitions or enabled role hints
+- assign one persisted role to one user or remove one persisted role from one user
+- bootstrap or validate the super-admin bypass
+- read permission names or invalidate permission lookup caches
+- translate access runtime events into normalized audit writes
+- switch audit persistence between `null` and `activitylog`
+- expose or change `website:sync-permissions` and `website:seed-roles`
+- expose or change doctor diagnostics for synchronization or super-admin readiness
+- use or extend access testing helpers for sync and role workflows
+
+## Functional Workflow
+
+1. Identify the access function that is changing before choosing code paths.
+2. Read the matching reference file for that function group.
+3. Reuse the existing runtime path instead of adding a parallel helper or alternate engine.
+4. Keep the boundary between permission sync, role sync, user-role assignment, audit, doctor, commands, and testing helpers explicit.
+5. Prove the change with package tests first, then host integration only when the function crosses package boundaries.
 
 ## Core Rules
 
@@ -39,18 +47,9 @@ Activate this skill when working inside `yezzmedia/laravel-access`, especially w
 - Do not treat role names as cross-package runtime contracts.
 - Use `defaultRoleHints` only in explicit seeding or preset flows, never as ordinary runtime sync behavior.
 - Keep super-admin behavior centralized, explicit, and testable.
-
-## Recommended Slice Order
-
-1. `PermissionSyncService`
-2. `RoleManager`
-3. `UserRoleManager`
-4. `SuperAdminGateBootstrapper`
-5. `PermissionMap`
-6. `PermissionCacheManager`
-7. audit integration
-8. commands
-9. doctor checks
+- Keep CLI commands thin and keep business logic in the runtime services.
+- Keep doctor checks diagnostic-only; do not repair state inside a check.
+- Keep testing helpers on the real runtime path; do not add fake sync or role subsystems.
 
 ## Runtime Integration Rules
 
@@ -59,6 +58,8 @@ Activate this skill when working inside `yezzmedia/laravel-access`, especially w
 - Reset permission-related caches after persistent authorization state changes.
 - Dispatch runtime events only after successful state changes.
 - Fail fast when required persisted roles or permissions are missing.
+- Keep optional `class_exists()` safety checks in provider binding logic only.
+- Keep `activitylog` optional and bind it through `access.audit.driver` only.
 
 ## Testing Pattern
 
@@ -66,11 +67,13 @@ Activate this skill when working inside `yezzmedia/laravel-access`, especially w
 - Use realistic Testbench schema for permissions, roles, and assignment pivots.
 - Keep host tests for cross-package integration confirmation.
 - Prefer real foundation registration and access service resolution over shortcuts.
+- Use the access testing helpers when they reduce repetitive setup without bypassing the real workflow.
 
 ## References
 
 - Use [references/runtime-surface.md](references/runtime-surface.md) for the approved V1 access surface.
-- Use [references/role-and-user-flows.md](references/role-and-user-flows.md) for sync and assignment boundaries.
+- Use [references/permission-and-role-runtime.md](references/permission-and-role-runtime.md) for permission sync, role seeding, role synchronization, assignment, and lookup boundaries.
+- Use [references/audit-and-ops.md](references/audit-and-ops.md) for audit wiring, doctor checks, and setup commands.
 - Use [references/testing.md](references/testing.md) for package-versus-host verification rules.
 - Use [references/checklist.md](references/checklist.md) before finalizing access changes.
 
@@ -80,4 +83,8 @@ Activate this skill when working inside `yezzmedia/laravel-access`, especially w
 - treating `defaultRoleHints` as automatic runtime behavior
 - hiding super-admin semantics in unrelated services
 - dispatching audit or lifecycle events without a real state change
+- putting audit driver fallback logic inside listeners instead of provider bindings
+- turning commands into business-logic entry points instead of thin operational wrappers
+- writing doctor checks that mutate runtime state
+- inventing test-only authorization engines instead of using the real services
 - skipping package tests and relying only on host integration tests

@@ -1,11 +1,10 @@
 # Role And User Flows
 
-- `PermissionSyncService` persists foundation-defined permissions.
-- `RoleManager` composes persisted roles from explicit `RoleDefinition` objects.
-- `UserRoleManager` assigns or removes one existing persisted role for one user.
+This reference is kept for continuity only.
 
-Keep these boundaries separate.
+Use `permission-and-role-runtime.md` as the primary function-oriented reference for:
 
-Use `defaultRoleHints` only in explicit role seeding or preset flows. Do not let ordinary permission sync create or assign roles implicitly.
-
-Fail fast when role definitions reference unknown permissions or when user-role flows reference unknown persisted roles.
+- permission synchronization
+- role seeding and synchronization
+- user-role assignment and removal
+- super-admin and lookup boundaries

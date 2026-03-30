@@ -8,3 +8,14 @@
   - `role_has_permissions`
   - `model_has_roles` when testing user-role assignment
 - Prefer real provider boot and container resolution.
+- Use `AccessTestCase` as the shared package baseline.
+- Use `InteractsWithPermissionSync` when tests need to:
+  - register foundation permission definitions
+  - execute the real permission sync path
+  - assert synchronized permission state readably
+- Use `InteractsWithRoles` when tests need to:
+  - build reusable `RoleDefinition` fixtures
+  - execute the real role synchronization path
+  - assert role-permission relationships readably
+- Keep helpers thin; they should reduce repetitive setup, not replace the real workflow.
+- Add host tests only when the behavior crosses package boundaries such as local path-repository integration or optional driver wiring.
