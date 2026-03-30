@@ -20,9 +20,11 @@ abstract class AccessTestCase extends FoundationTestCase
     {
         parent::setUp();
 
+        $this->ensureUsersTableExists();
         $this->ensurePermissionsTableExists();
         $this->ensureRolesTableExists();
         $this->ensureRoleHasPermissionsTableExists();
+        $this->ensureModelHasRolesTableExists();
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
@@ -64,6 +66,21 @@ abstract class AccessTestCase extends FoundationTestCase
         });
     }
 
+    private function ensureUsersTableExists(): void
+    {
+        if (Schema::hasTable('users')) {
+            return;
+        }
+
+        Schema::create('users', static function (Blueprint $table): void {
+            $table->bigIncrements('id');
+            $table->string('name');
+            $table->string('email')->nullable();
+            $table->string('password')->nullable();
+            $table->timestamps();
+        });
+    }
+
     private function ensureRolesTableExists(): void
     {
         $tableName = (string) config('permission.table_names.roles', 'roles');
@@ -98,6 +115,25 @@ abstract class AccessTestCase extends FoundationTestCase
         });
     }
 
+    private function ensureModelHasRolesTableExists(): void
+    {
+        $tableName = (string) config('permission.table_names.model_has_roles', 'model_has_roles');
+        $rolePivotKey = $this->rolePivotKey();
+        $modelMorphKey = $this->modelMorphKey();
+
+        if (Schema::hasTable($tableName)) {
+            return;
+        }
+
+        Schema::create($tableName, function (Blueprint $table) use ($rolePivotKey, $modelMorphKey): void {
+            $table->unsignedBigInteger($rolePivotKey);
+            $table->string('model_type');
+            $table->unsignedBigInteger($modelMorphKey);
+            $table->index([$modelMorphKey, 'model_type']);
+            $table->primary([$rolePivotKey, $modelMorphKey, 'model_type']);
+        });
+    }
+
     private function permissionPivotKey(): string
     {
         $column = config('permission.column_names.permission_pivot_key');
@@ -115,6 +151,17 @@ abstract class AccessTestCase extends FoundationTestCase
 
         if (! is_string($column) || $column === '') {
             return 'role_id';
+        }
+
+        return $column;
+    }
+
+    private function modelMorphKey(): string
+    {
+        $column = config('permission.column_names.model_morph_key');
+
+        if (! is_string($column) || $column === '') {
+            return 'model_id';
         }
 
         return $column;
