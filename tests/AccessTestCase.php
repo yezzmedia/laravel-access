@@ -7,6 +7,7 @@ namespace YezzMedia\Access\Tests;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\PermissionRegistrar;
+use Spatie\Permission\PermissionServiceProvider;
 use YezzMedia\Access\AccessServiceProvider;
 use YezzMedia\Foundation\Testing\FoundationTestCase;
 
@@ -27,6 +28,7 @@ abstract class AccessTestCase extends FoundationTestCase
     {
         return [
             ...parent::getPackageProviders($app),
+            PermissionServiceProvider::class,
             AccessServiceProvider::class,
         ];
     }

@@ -85,13 +85,13 @@ final class PermissionSyncService
     }
 
     /**
-     * @return class-string<Model>
+     * @return class-string<Permission>
      */
     private function permissionModel(): string
     {
         $model = config('permission.models.permission', Permission::class);
 
-        if (! is_string($model) || $model === '') {
+        if (! is_string($model) || $model === '' || ! is_a($model, Permission::class, true)) {
             return Permission::class;
         }
 
