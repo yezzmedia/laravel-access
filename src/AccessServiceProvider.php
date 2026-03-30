@@ -9,6 +9,8 @@ use InvalidArgumentException;
 use Spatie\Activitylog\Support\ActivityLogger;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use YezzMedia\Access\Console\SeedRolesCommand;
+use YezzMedia\Access\Console\SyncPermissionsCommand;
 use YezzMedia\Access\Contracts\AuthorizationAuditWriter;
 use YezzMedia\Access\Events\PermissionsSynchronized;
 use YezzMedia\Access\Events\RolesSynchronized;
@@ -34,7 +36,11 @@ class AccessServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('laravel-access')
-            ->hasConfigFile();
+            ->hasConfigFile()
+            ->hasCommands([
+                SyncPermissionsCommand::class,
+                SeedRolesCommand::class,
+            ]);
     }
 
     public function packageRegistered(): void
