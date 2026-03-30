@@ -25,7 +25,7 @@ final class SuperAdminGateBootstrapper
             return;
         }
 
-        $roleName = $this->superAdminRoleName();
+        $roleName = $this->configuredRoleName();
 
         $this->gate->before(function (Authenticatable $user, string $ability) use ($roleName): ?bool {
             if (! method_exists($user, 'hasRole')) {
@@ -38,7 +38,7 @@ final class SuperAdminGateBootstrapper
         $this->bootstrapped = true;
     }
 
-    private function superAdminRoleName(): string
+    public function configuredRoleName(): string
     {
         $roleName = config('access.super_admin.role_name');
 

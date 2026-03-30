@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use YezzMedia\Access\AccessPlatformPackage;
 use YezzMedia\Access\Contracts\AuthorizationAuditWriter;
+use YezzMedia\Access\Doctor\PermissionsSynchronizedCheck;
+use YezzMedia\Access\Doctor\SuperAdminConfiguredCheck;
 use YezzMedia\Access\Support\ActivityLogAuthorizationAuditWriter;
 use YezzMedia\Access\Support\NullAuthorizationAuditWriter;
 use YezzMedia\Foundation\Contracts\DefinesAuditEvents;
@@ -11,15 +13,21 @@ use YezzMedia\Foundation\Contracts\DefinesPermissions;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
 use YezzMedia\Foundation\Contracts\ProvidesDoctorChecks;
 use YezzMedia\Foundation\Contracts\ProvidesOpsModules;
+use YezzMedia\Foundation\Doctor\DoctorManager;
 use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
 
 it('registers the access bootstrap bindings', function (): void {
+    $doctorResults = app(DoctorManager::class)->run()->keyBy('key');
+
     expect(app(AuthorizationAuditWriter::class))->toBeInstanceOf(NullAuthorizationAuditWriter::class)
         ->and(app(PackageRegistry::class)->has('yezzmedia/laravel-access'))->toBeTrue()
         ->and(app(PermissionRegistry::class)->forPackage('yezzmedia/laravel-access'))->toHaveCount(0)
-        ->and(app(OpsModuleRegistry::class)->forPackage('yezzmedia/laravel-access'))->toHaveCount(0);
+        ->and(app(OpsModuleRegistry::class)->forPackage('yezzmedia/laravel-access'))->toHaveCount(0)
+        ->and($doctorResults->keys()->all())->toContain('permissions_synchronized', 'super_admin_configured')
+        ->and($doctorResults->get('permissions_synchronized')?->status)->toBe('skipped')
+        ->and($doctorResults->get('super_admin_configured')?->status)->toBe('skipped');
 });
 
 it('merges the package configuration', function (): void {
@@ -66,7 +74,9 @@ it('describes the approved bootstrap surface', function (): void {
         ->and($metadata->vendor)->toBe('yezzmedia')
         ->and($metadata->packageClass)->toBe(AccessPlatformPackage::class)
         ->and($package->permissionDefinitions())->toBe([])
-        ->and($package->doctorChecks())->toBe([])
+        ->and($package->doctorChecks())->toHaveCount(2)
+        ->and($package->doctorChecks()[0])->toBeInstanceOf(PermissionsSynchronizedCheck::class)
+        ->and($package->doctorChecks()[1])->toBeInstanceOf(SuperAdminConfiguredCheck::class)
         ->and($package->opsModuleDefinitions())->toBe([])
         ->and($auditEvents->keys()->all())->toBe([
             'access.permissions.synchronized',
