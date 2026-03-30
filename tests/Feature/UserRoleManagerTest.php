@@ -7,6 +7,7 @@ use Tests\Fixtures\TestUser;
 use YezzMedia\Access\Data\RoleDefinition;
 use YezzMedia\Access\Events\UserRoleAssigned;
 use YezzMedia\Access\Events\UserRoleRemoved;
+use YezzMedia\Access\Support\PermissionCacheManager;
 use YezzMedia\Access\Support\PermissionSyncService;
 use YezzMedia\Access\Support\RoleManager;
 use YezzMedia\Access\Support\UserRoleManager;
@@ -171,4 +172,24 @@ it('fails fast when the target role does not exist', function (): void {
 
     expect(fn () => app(UserRoleManager::class)->assignRole($user, 'missing_role'))
         ->toThrow(InvalidArgumentException::class, 'Missing: [missing_role]');
+});
+
+it('forgets permission map cache entries after user role changes', function (): void {
+    prepareUserRoleTestRole('yezzmedia/laravel-content', [
+        new PermissionDefinition('content.pages.publish', 'yezzmedia/laravel-content', 'Publish pages'),
+    ], new RoleDefinition(
+        name: 'content_editor',
+        label: 'Content editor',
+        description: 'Can publish content.',
+        permissionNames: ['content.pages.publish'],
+    ));
+
+    $cache = app(PermissionCacheManager::class);
+    $user = TestUser::query()->create(['name' => 'Editor']);
+
+    cache()->put($cache->allKey(), ['stale.permission'], 600);
+
+    app(UserRoleManager::class)->assignRole($user, 'content_editor');
+
+    expect(cache()->has($cache->allKey()))->toBeFalse();
 });

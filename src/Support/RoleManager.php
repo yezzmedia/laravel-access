@@ -20,6 +20,7 @@ final class RoleManager
 {
     public function __construct(
         private readonly PermissionRegistrar $permissionRegistrar,
+        private readonly PermissionCacheManager $permissionCache,
         private readonly Dispatcher $events,
     ) {}
 
@@ -73,6 +74,7 @@ final class RoleManager
         }
 
         $this->permissionRegistrar->forgetCachedPermissions();
+        $this->permissionCache->forgetAll();
         $this->events->dispatch(new RolesSynchronized(
             roleNames: $roleNames,
             createdCount: $createdCount,

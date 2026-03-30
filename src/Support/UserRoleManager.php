@@ -19,6 +19,7 @@ final class UserRoleManager
 {
     public function __construct(
         private readonly PermissionRegistrar $permissionRegistrar,
+        private readonly PermissionCacheManager $permissionCache,
         private readonly Dispatcher $events,
     ) {}
 
@@ -33,6 +34,7 @@ final class UserRoleManager
         $this->assertUserSupportsRoleAssignments($user);
         $this->invokeUserRoleMethod($user, 'assignRole', $role);
         $this->permissionRegistrar->forgetCachedPermissions();
+        $this->permissionCache->forgetAll();
 
         $this->events->dispatch(new UserRoleAssigned(
             userId: $user->getAuthIdentifier(),
@@ -53,6 +55,7 @@ final class UserRoleManager
         $this->assertUserSupportsRoleAssignments($user);
         $this->invokeUserRoleMethod($user, 'removeRole', $role);
         $this->permissionRegistrar->forgetCachedPermissions();
+        $this->permissionCache->forgetAll();
 
         $this->events->dispatch(new UserRoleRemoved(
             userId: $user->getAuthIdentifier(),

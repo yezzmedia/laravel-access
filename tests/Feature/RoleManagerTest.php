@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Event;
 use Spatie\Permission\Models\Role;
 use YezzMedia\Access\Data\RoleDefinition;
 use YezzMedia\Access\Events\RolesSynchronized;
+use YezzMedia\Access\Support\PermissionCacheManager;
 use YezzMedia\Access\Support\PermissionSyncService;
 use YezzMedia\Access\Support\RoleManager;
 use YezzMedia\Foundation\Contracts\DefinesPermissions;
@@ -200,4 +201,22 @@ it('fails fast when a role references unknown permissions', function (): void {
         description: 'Can publish content.',
         permissionNames: ['content.pages.publish', 'content.pages.archive'],
     )))->toThrow(InvalidArgumentException::class, 'Missing: [content.pages.archive]');
+});
+
+it('forgets permission map cache entries after role synchronization', function (): void {
+    synchronizeRoleTestPermissions('yezzmedia/laravel-content', [
+        new PermissionDefinition('content.pages.publish', 'yezzmedia/laravel-content', 'Publish pages'),
+    ]);
+
+    $cache = app(PermissionCacheManager::class);
+    cache()->put($cache->allKey(), ['stale.permission'], 600);
+
+    app(RoleManager::class)->syncRole(new RoleDefinition(
+        name: 'content_editor',
+        label: 'Content editor',
+        description: 'Can publish content.',
+        permissionNames: ['content.pages.publish'],
+    ));
+
+    expect(cache()->has($cache->allKey()))->toBeFalse();
 });

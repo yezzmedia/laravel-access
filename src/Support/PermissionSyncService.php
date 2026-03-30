@@ -20,6 +20,7 @@ final class PermissionSyncService
     public function __construct(
         private readonly PermissionRegistry $permissions,
         private readonly PermissionRegistrar $permissionRegistrar,
+        private readonly PermissionCacheManager $permissionCache,
         private readonly Dispatcher $events,
     ) {}
 
@@ -70,6 +71,7 @@ final class PermissionSyncService
         }
 
         $this->permissionRegistrar->forgetCachedPermissions();
+        $this->permissionCache->forgetAll();
 
         $result = new PermissionsSynchronized(
             packageNames: $packageNames,

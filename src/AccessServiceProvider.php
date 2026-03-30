@@ -8,8 +8,11 @@ use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use YezzMedia\Access\Contracts\AuthorizationAuditWriter;
 use YezzMedia\Access\Support\NullAuthorizationAuditWriter;
+use YezzMedia\Access\Support\PermissionCacheManager;
+use YezzMedia\Access\Support\PermissionMap;
 use YezzMedia\Access\Support\PermissionSyncService;
 use YezzMedia\Access\Support\RoleManager;
+use YezzMedia\Access\Support\SuperAdminGateBootstrapper;
 use YezzMedia\Access\Support\UserRoleManager;
 use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
 
@@ -28,8 +31,11 @@ class AccessServiceProvider extends PackageServiceProvider
     public function packageRegistered(): void
     {
         $this->app->singleton(AuthorizationAuditWriter::class, static fn (): AuthorizationAuditWriter => new NullAuthorizationAuditWriter);
+        $this->app->singleton(PermissionCacheManager::class);
+        $this->app->singleton(PermissionMap::class);
         $this->app->singleton(PermissionSyncService::class);
         $this->app->singleton(RoleManager::class);
+        $this->app->singleton(SuperAdminGateBootstrapper::class);
         $this->app->singleton(UserRoleManager::class);
     }
 
@@ -37,5 +43,7 @@ class AccessServiceProvider extends PackageServiceProvider
     {
         // Access must join the same explicit foundation registration flow as other packages.
         $this->app->make(PlatformPackageRegistrar::class)->register(new AccessPlatformPackage);
+
+        $this->app->make(SuperAdminGateBootstrapper::class)->bootstrap();
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Event;
 use Spatie\Permission\Models\Permission;
 use YezzMedia\Access\Events\PermissionsSynchronized;
+use YezzMedia\Access\Support\PermissionCacheManager;
 use YezzMedia\Access\Support\PermissionSyncService;
 use YezzMedia\Foundation\Contracts\DefinesPermissions;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
@@ -121,4 +122,18 @@ it('ignores default role hints during normal permission synchronization', functi
         ->and($result->createdCount)->toBe(1)
         ->and($result->updatedCount)->toBe(0)
         ->and($result->removedCount)->toBe(0);
+});
+
+it('forgets permission map cache entries after permission synchronization', function (): void {
+    $cache = app(PermissionCacheManager::class);
+
+    cache()->put($cache->allKey(), ['stale.permission'], 600);
+
+    registerAccessPermissionPackage('yezzmedia/laravel-content', [
+        new PermissionDefinition('content.pages.publish', 'yezzmedia/laravel-content', 'Publish pages'),
+    ]);
+
+    app(PermissionSyncService::class)->sync();
+
+    expect(cache()->has($cache->allKey()))->toBeFalse();
 });
