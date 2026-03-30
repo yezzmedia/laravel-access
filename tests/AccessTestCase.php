@@ -6,6 +6,7 @@ namespace YezzMedia\Access\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Activitylog\ActivitylogServiceProvider;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\PermissionServiceProvider;
 use YezzMedia\Access\AccessServiceProvider;
@@ -25,6 +26,7 @@ abstract class AccessTestCase extends FoundationTestCase
         $this->ensureRolesTableExists();
         $this->ensureRoleHasPermissionsTableExists();
         $this->ensureModelHasRolesTableExists();
+        $this->ensureActivityLogTableExists();
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
@@ -33,6 +35,7 @@ abstract class AccessTestCase extends FoundationTestCase
         return [
             ...parent::getPackageProviders($app),
             PermissionServiceProvider::class,
+            ...$this->activityLogProviders(),
             AccessServiceProvider::class,
         ];
     }
@@ -132,6 +135,37 @@ abstract class AccessTestCase extends FoundationTestCase
             $table->index([$modelMorphKey, 'model_type']);
             $table->primary([$rolePivotKey, $modelMorphKey, 'model_type']);
         });
+    }
+
+    private function ensureActivityLogTableExists(): void
+    {
+        if (! class_exists(ActivitylogServiceProvider::class) || Schema::hasTable('activity_log')) {
+            return;
+        }
+
+        Schema::create('activity_log', static function (Blueprint $table): void {
+            $table->id();
+            $table->string('log_name')->nullable()->index();
+            $table->text('description');
+            $table->nullableMorphs('subject', 'subject');
+            $table->string('event')->nullable();
+            $table->nullableMorphs('causer');
+            $table->json('attribute_changes')->nullable();
+            $table->json('properties')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * @return array<int, class-string>
+     */
+    private function activityLogProviders(): array
+    {
+        if (! class_exists(ActivitylogServiceProvider::class)) {
+            return [];
+        }
+
+        return [ActivitylogServiceProvider::class];
     }
 
     private function permissionPivotKey(): string

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use YezzMedia\Access\AccessPlatformPackage;
 use YezzMedia\Access\Contracts\AuthorizationAuditWriter;
+use YezzMedia\Access\Support\ActivityLogAuthorizationAuditWriter;
 use YezzMedia\Access\Support\NullAuthorizationAuditWriter;
 use YezzMedia\Foundation\Contracts\DefinesAuditEvents;
 use YezzMedia\Foundation\Contracts\DefinesPermissions;
@@ -27,6 +28,28 @@ it('merges the package configuration', function (): void {
         ->and(config('access.super_admin.role_name'))->toBeNull()
         ->and(config('access.cache.permission_map.enabled'))->toBeFalse()
         ->and(config('access.roles.apply_default_role_hints'))->toBeFalse();
+});
+
+it('can bind the activitylog audit writer when the driver is enabled', function (): void {
+    config()->set('access.audit.driver', 'activitylog');
+    app()->forgetInstance(AuthorizationAuditWriter::class);
+
+    if (! class_exists('Spatie\\Activitylog\\ActivitylogServiceProvider')) {
+        expect(fn () => app(AuthorizationAuditWriter::class))
+            ->toThrow(InvalidArgumentException::class, 'Access audit driver [activitylog] requires spatie/laravel-activitylog.');
+
+        return;
+    }
+
+    expect(app(AuthorizationAuditWriter::class))->toBeInstanceOf(ActivityLogAuthorizationAuditWriter::class);
+});
+
+it('fails fast for unsupported audit drivers', function (): void {
+    config()->set('access.audit.driver', 'unsupported');
+    app()->forgetInstance(AuthorizationAuditWriter::class);
+
+    expect(fn () => app(AuthorizationAuditWriter::class))
+        ->toThrow(InvalidArgumentException::class, 'Unsupported access audit driver [unsupported].');
 });
 
 it('describes the approved bootstrap surface', function (): void {

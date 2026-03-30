@@ -26,7 +26,8 @@
         "mockery/mockery": "^1.6",
         "orchestra/testbench": "^11.0",
         "pestphp/pest": "^4.0",
-        "pestphp/pest-plugin-laravel": "^4.0"
+        "pestphp/pest-plugin-laravel": "^4.0",
+        "spatie/laravel-activitylog": "^5.0"
     },
     "suggest": {
         "spatie/laravel-activitylog": "Optional audit persistence driver for authorization audit events."
