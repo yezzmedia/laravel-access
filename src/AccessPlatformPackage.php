@@ -6,7 +6,12 @@ namespace YezzMedia\Access;
 
 use YezzMedia\Access\Doctor\PermissionsSynchronizedCheck;
 use YezzMedia\Access\Doctor\SuperAdminConfiguredCheck;
+use YezzMedia\Access\Install\EnsurePermissionStoreReadyInstallStep;
+use YezzMedia\Access\Install\PublishPermissionConfigInstallStep;
+use YezzMedia\Access\Install\PublishPermissionMigrationsInstallStep;
+use YezzMedia\Access\Install\SyncPermissionsInstallStep;
 use YezzMedia\Foundation\Contracts\DefinesAuditEvents;
+use YezzMedia\Foundation\Contracts\DefinesInstallSteps;
 use YezzMedia\Foundation\Contracts\DefinesPermissions;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
 use YezzMedia\Foundation\Contracts\ProvidesDoctorChecks;
@@ -16,11 +21,12 @@ use YezzMedia\Foundation\Data\OpsModuleDefinition;
 use YezzMedia\Foundation\Data\PackageMetadata;
 use YezzMedia\Foundation\Data\PermissionDefinition;
 use YezzMedia\Foundation\Doctor\DoctorCheck;
+use YezzMedia\Foundation\Install\InstallStep;
 
 /**
  * Describes the access package surface that foundation should register.
  */
-final class AccessPlatformPackage implements DefinesAuditEvents, DefinesPermissions, PlatformPackage, ProvidesDoctorChecks, ProvidesOpsModules
+final class AccessPlatformPackage implements DefinesAuditEvents, DefinesInstallSteps, DefinesPermissions, PlatformPackage, ProvidesDoctorChecks, ProvidesOpsModules
 {
     public function metadata(): PackageMetadata
     {
@@ -82,6 +88,19 @@ final class AccessPlatformPackage implements DefinesAuditEvents, DefinesPermissi
                 severity: 'warning',
                 contextKeys: ['user_id', 'role_name', 'actor_id', 'guard_name'],
             ),
+        ];
+    }
+
+    /**
+     * @return array<int, InstallStep>
+     */
+    public function installSteps(): array
+    {
+        return [
+            app(PublishPermissionConfigInstallStep::class),
+            app(PublishPermissionMigrationsInstallStep::class),
+            app(EnsurePermissionStoreReadyInstallStep::class),
+            app(SyncPermissionsInstallStep::class),
         ];
     }
 
