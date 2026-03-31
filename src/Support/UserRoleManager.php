@@ -21,6 +21,7 @@ final class UserRoleManager
         private readonly PermissionRegistrar $permissionRegistrar,
         private readonly PermissionCacheManager $permissionCache,
         private readonly Dispatcher $events,
+        private readonly SuperAdminSafetyGuard $superAdminSafety,
     ) {}
 
     public function assignRole(Authenticatable $user, string $roleName, ?Authenticatable $actor = null): void
@@ -53,6 +54,7 @@ final class UserRoleManager
             return;
         }
 
+        $this->superAdminSafety->assertUserRoleRemovalAllowed($user, $roleName);
         $this->assertUserSupportsRoleAssignments($user);
         $this->invokeUserRoleMethod($user, 'removeRole', $role);
         $this->permissionRegistrar->forgetCachedPermissions();
