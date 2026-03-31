@@ -21,6 +21,7 @@ use YezzMedia\Access\Support\ActivityLogAuthorizationAuditWriter;
 use YezzMedia\Access\Support\NullAuthorizationAuditWriter;
 use YezzMedia\Access\Support\PermissionCacheManager;
 use YezzMedia\Access\Support\PermissionMap;
+use YezzMedia\Access\Support\PermissionStoreSetup;
 use YezzMedia\Access\Support\PermissionSyncService;
 use YezzMedia\Access\Support\RoleManager;
 use YezzMedia\Access\Support\SuperAdminGateBootstrapper;
@@ -49,6 +50,7 @@ class AccessServiceProvider extends PackageServiceProvider
         $this->app->singleton(PermissionCacheManager::class);
         $this->app->singleton(PermissionMap::class);
         $this->app->singleton(PermissionSyncService::class);
+        $this->app->singleton(PermissionStoreSetup::class);
         $this->app->singleton(RoleManager::class);
         $this->app->singleton(SuperAdminGateBootstrapper::class);
         $this->app->singleton(UserRoleManager::class);

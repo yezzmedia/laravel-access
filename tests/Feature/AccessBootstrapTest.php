@@ -6,9 +6,14 @@ use YezzMedia\Access\AccessPlatformPackage;
 use YezzMedia\Access\Contracts\AuthorizationAuditWriter;
 use YezzMedia\Access\Doctor\PermissionsSynchronizedCheck;
 use YezzMedia\Access\Doctor\SuperAdminConfiguredCheck;
+use YezzMedia\Access\Install\EnsurePermissionStoreReadyInstallStep;
+use YezzMedia\Access\Install\PublishPermissionConfigInstallStep;
+use YezzMedia\Access\Install\PublishPermissionMigrationsInstallStep;
+use YezzMedia\Access\Install\SyncPermissionsInstallStep;
 use YezzMedia\Access\Support\ActivityLogAuthorizationAuditWriter;
 use YezzMedia\Access\Support\NullAuthorizationAuditWriter;
 use YezzMedia\Foundation\Contracts\DefinesAuditEvents;
+use YezzMedia\Foundation\Contracts\DefinesInstallSteps;
 use YezzMedia\Foundation\Contracts\DefinesPermissions;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
 use YezzMedia\Foundation\Contracts\ProvidesDoctorChecks;
@@ -68,12 +73,18 @@ it('describes the approved bootstrap surface', function (): void {
     expect($package)->toBeInstanceOf(PlatformPackage::class)
         ->and($package)->toBeInstanceOf(DefinesPermissions::class)
         ->and($package)->toBeInstanceOf(DefinesAuditEvents::class)
+        ->and($package)->toBeInstanceOf(DefinesInstallSteps::class)
         ->and($package)->toBeInstanceOf(ProvidesDoctorChecks::class)
         ->and($package)->toBeInstanceOf(ProvidesOpsModules::class)
         ->and($metadata->name)->toBe('yezzmedia/laravel-access')
         ->and($metadata->vendor)->toBe('yezzmedia')
         ->and($metadata->packageClass)->toBe(AccessPlatformPackage::class)
         ->and($package->permissionDefinitions())->toBe([])
+        ->and($package->installSteps())->toHaveCount(4)
+        ->and($package->installSteps()[0])->toBeInstanceOf(PublishPermissionConfigInstallStep::class)
+        ->and($package->installSteps()[1])->toBeInstanceOf(PublishPermissionMigrationsInstallStep::class)
+        ->and($package->installSteps()[2])->toBeInstanceOf(EnsurePermissionStoreReadyInstallStep::class)
+        ->and($package->installSteps()[3])->toBeInstanceOf(SyncPermissionsInstallStep::class)
         ->and($package->doctorChecks())->toHaveCount(2)
         ->and($package->doctorChecks()[0])->toBeInstanceOf(PermissionsSynchronizedCheck::class)
         ->and($package->doctorChecks()[1])->toBeInstanceOf(SuperAdminConfiguredCheck::class)
