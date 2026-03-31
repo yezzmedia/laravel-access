@@ -4,6 +4,24 @@ All notable changes to `yezzmedia/laravel-access` will be documented in this fil
 
 The format is based on Keep a Changelog and this package follows Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+
+- foundation-driven install workflow through `DefinesInstallSteps`
+- host setup orchestration through `PermissionStoreSetup`
+- install steps for publishing config, publishing migrations, preparing the permission store, and synchronizing permissions
+- `SuperAdminSafetyGuard` to prevent unsafe removal of the configured super-admin role below the enforced minimum operator count
+
+### Changed
+
+- `UserRoleManager` now enforces super-admin removal safety before mutating assignments
+- access install readiness now treats pending published access migrations as blocking setup work
+
+### Documentation
+
+- documented the central foundation install flow and the super-admin role-removal safety behavior in the package README
+
 ## [0.1.0] - 2026-03-30
 
 ### Added
