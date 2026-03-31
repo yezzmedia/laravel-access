@@ -117,6 +117,7 @@ app(RoleManager::class)->syncRole(new RoleDefinition(
 - fails fast when the referenced role does not exist
 - emits events only on real state changes
 - treats repeated assignment/removal as a no-op
+- blocks removal of the configured super-admin role when that would reduce the qualified operator count below the enforced minimum
 - invalidates global and user-specific permission-map cache keys
 
 ```php
@@ -199,6 +200,33 @@ php artisan website:seed-roles
 
 - `website:sync-permissions` runs the real permission sync path
 - `website:seed-roles` seeds roles from `defaultRoleHints` only when `access.roles.apply_default_role_hints=true`
+
+## Foundation install workflow
+
+Access integrates with foundation through `DefinesInstallSteps` so the host can prepare the permission store through the central installer instead of package-specific setup commands.
+
+Supported install sequence:
+
+- publish permission config when missing
+- publish Spatie permission migrations when missing or when new published migrations are required
+- ensure the permission store is ready before synchronization
+- synchronize declared permissions through the existing runtime service
+
+Use the central installer like this:
+
+```bash
+php artisan website:install --only=yezzmedia/laravel-access
+php artisan website:install --only=yezzmedia/laravel-access --migrate
+php artisan website:install --only=yezzmedia/laravel-access --refresh-publish
+```
+
+Important behavior:
+
+- `--migrate` is required when the permission store is missing or when published access migrations are still pending
+- `--refresh-publish` refreshes already published access resources intentionally instead of doing so during ordinary runs
+- permission synchronization is blocked until pending published access migrations are resolved
+
+`PermissionStoreSetup` owns these readiness checks and host-side setup actions for the runtime.
 
 ## Consumer package integration
 
