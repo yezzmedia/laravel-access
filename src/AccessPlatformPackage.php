@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace YezzMedia\Access;
 
+use YezzMedia\Access\Doctor\AccessAuditConfiguredCheck;
 use YezzMedia\Access\Doctor\PermissionsSynchronizedCheck;
 use YezzMedia\Access\Doctor\SuperAdminConfiguredCheck;
+use YezzMedia\Access\Install\ConfigureAccessAuditInstallStep;
 use YezzMedia\Access\Install\EnsurePermissionStoreReadyInstallStep;
 use YezzMedia\Access\Install\PublishPermissionConfigInstallStep;
 use YezzMedia\Access\Install\PublishPermissionMigrationsInstallStep;
@@ -139,6 +141,7 @@ final class AccessPlatformPackage implements DefinesAuditEvents, DefinesInstallS
     {
         return [
             app(PublishPermissionConfigInstallStep::class),
+            app(ConfigureAccessAuditInstallStep::class),
             app(PublishPermissionMigrationsInstallStep::class),
             app(EnsurePermissionStoreReadyInstallStep::class),
             app(SyncPermissionsInstallStep::class),
@@ -151,6 +154,7 @@ final class AccessPlatformPackage implements DefinesAuditEvents, DefinesInstallS
     public function doctorChecks(): array
     {
         return [
+            app(AccessAuditConfiguredCheck::class),
             app(PermissionsSynchronizedCheck::class),
             app(SuperAdminConfiguredCheck::class),
         ];

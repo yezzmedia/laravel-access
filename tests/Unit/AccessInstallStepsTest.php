@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 use Tests\Fixtures\FakePermissionStoreSetup;
+use YezzMedia\Access\Install\ConfigureAccessAuditInstallStep;
 use YezzMedia\Access\Install\EnsurePermissionStoreReadyInstallStep;
 use YezzMedia\Access\Install\PublishPermissionConfigInstallStep;
 use YezzMedia\Access\Install\PublishPermissionMigrationsInstallStep;
 use YezzMedia\Access\Install\SyncPermissionsInstallStep;
+use YezzMedia\Access\Support\PermissionStoreSetup;
 use YezzMedia\Foundation\Data\InstallContext;
 
 it('refreshes the published permission config only when explicitly requested', function (): void {
@@ -76,4 +78,19 @@ it('reuses the existing permission sync runtime inside the install workflow', fu
     $step->handle(new InstallContext);
 
     expect($setup->calls)->toBe(['sync_permissions']);
+});
+
+it('configures access audit persistence only when requested', function (): void {
+    $setup = new FakePermissionStoreSetup(hasPublishedConfig: true);
+    app()->instance(PermissionStoreSetup::class, $setup);
+    $step = new ConfigureAccessAuditInstallStep($setup);
+
+    expect($step->shouldRun(new InstallContext))->toBeFalse()
+        ->and($step->shouldRun(new InstallContext(configureAccessAudit: true)))->toBeTrue();
+
+    $step->handle(new InstallContext(configureAccessAudit: true));
+
+    expect($setup->calls)->toBe(['publish_access_config', 'configure_access_audit'])
+        ->and($setup->auditDriver)->toBe('activitylog')
+        ->and($setup->auditDriverConfigured)->toBeTrue();
 });
