@@ -16,6 +16,14 @@ class FakePermissionStoreSetup extends PermissionStoreSetup
 
     public bool $configWasForced = false;
 
+    public bool $accessConfigWasForced = false;
+
+    public bool $hasAccessConfig = false;
+
+    public ?string $auditDriver = null;
+
+    public bool $auditDriverConfigured = false;
+
     public function __construct(
         public bool $hasPublishedConfig = false,
         public bool $hasPublishedMigrations = false,
@@ -35,6 +43,29 @@ class FakePermissionStoreSetup extends PermissionStoreSetup
         $this->calls[] = 'publish_permission_config';
         $this->hasPublishedConfig = true;
         $this->configWasForced = $force;
+    }
+
+    public function accessConfigPublished(): bool
+    {
+        return $this->hasAccessConfig;
+    }
+
+    public function publishAccessConfig(bool $force = false): void
+    {
+        $this->calls[] = 'publish_access_config';
+        $this->accessConfigWasForced = $force;
+        $this->hasAccessConfig = true;
+    }
+
+    public function configureAuditDriver(string $driver): void
+    {
+        if (! $this->accessConfigPublished()) {
+            $this->publishAccessConfig();
+        }
+
+        $this->calls[] = 'configure_access_audit';
+        $this->auditDriver = $driver;
+        $this->auditDriverConfigured = true;
     }
 
     public function migrationsPublished(): bool

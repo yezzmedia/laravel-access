@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
+use Spatie\Activitylog\ActivitylogServiceProvider;
 use YezzMedia\Access\AccessPlatformPackage;
 use YezzMedia\Access\Contracts\AuthorizationAuditWriter;
+use YezzMedia\Access\Doctor\AccessAuditConfiguredCheck;
 use YezzMedia\Access\Doctor\PermissionsSynchronizedCheck;
 use YezzMedia\Access\Doctor\SuperAdminConfiguredCheck;
+use YezzMedia\Access\Install\ConfigureAccessAuditInstallStep;
 use YezzMedia\Access\Install\EnsurePermissionStoreReadyInstallStep;
 use YezzMedia\Access\Install\PublishPermissionConfigInstallStep;
 use YezzMedia\Access\Install\PublishPermissionMigrationsInstallStep;
@@ -26,6 +29,8 @@ use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
 
 it('registers the access bootstrap bindings', function (): void {
+    config()->set('ops.integrations.audit.provider', ActivitylogServiceProvider::class);
+
     $doctorResults = app(DoctorManager::class)->run()->keyBy('key');
 
     expect(app(AuthorizationAuditWriter::class))->toBeInstanceOf(NullAuthorizationAuditWriter::class)
@@ -39,7 +44,8 @@ it('registers the access bootstrap bindings', function (): void {
         ])
         ->and(app(PermissionRegistry::class)->forPackage('yezzmedia/laravel-access'))->toHaveCount(0)
         ->and(app(OpsModuleRegistry::class)->forPackage('yezzmedia/laravel-access'))->toHaveCount(0)
-        ->and($doctorResults->keys()->all())->toContain('permissions_synchronized', 'super_admin_configured')
+        ->and($doctorResults->keys()->all())->toContain('audit_configured', 'permissions_synchronized', 'super_admin_configured')
+        ->and($doctorResults->get('audit_configured')?->status)->toBe('warning')
         ->and($doctorResults->get('permissions_synchronized')?->status)->toBe('skipped')
         ->and($doctorResults->get('super_admin_configured')?->status)->toBe('skipped');
 });
@@ -97,14 +103,16 @@ it('describes the approved bootstrap surface', function (): void {
             'access.super_admin',
             'access.audit',
         ])
-        ->and($package->installSteps())->toHaveCount(4)
+        ->and($package->installSteps())->toHaveCount(5)
         ->and($package->installSteps()[0])->toBeInstanceOf(PublishPermissionConfigInstallStep::class)
-        ->and($package->installSteps()[1])->toBeInstanceOf(PublishPermissionMigrationsInstallStep::class)
-        ->and($package->installSteps()[2])->toBeInstanceOf(EnsurePermissionStoreReadyInstallStep::class)
-        ->and($package->installSteps()[3])->toBeInstanceOf(SyncPermissionsInstallStep::class)
-        ->and($package->doctorChecks())->toHaveCount(2)
-        ->and($package->doctorChecks()[0])->toBeInstanceOf(PermissionsSynchronizedCheck::class)
-        ->and($package->doctorChecks()[1])->toBeInstanceOf(SuperAdminConfiguredCheck::class)
+        ->and($package->installSteps()[1])->toBeInstanceOf(ConfigureAccessAuditInstallStep::class)
+        ->and($package->installSteps()[2])->toBeInstanceOf(PublishPermissionMigrationsInstallStep::class)
+        ->and($package->installSteps()[3])->toBeInstanceOf(EnsurePermissionStoreReadyInstallStep::class)
+        ->and($package->installSteps()[4])->toBeInstanceOf(SyncPermissionsInstallStep::class)
+        ->and($package->doctorChecks())->toHaveCount(3)
+        ->and($package->doctorChecks()[0])->toBeInstanceOf(AccessAuditConfiguredCheck::class)
+        ->and($package->doctorChecks()[1])->toBeInstanceOf(PermissionsSynchronizedCheck::class)
+        ->and($package->doctorChecks()[2])->toBeInstanceOf(SuperAdminConfiguredCheck::class)
         ->and($package->opsModuleDefinitions())->toBe([])
         ->and($auditEvents->keys()->all())->toBe([
             'access.permissions.synchronized',

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Tests\Fixtures\FakePermissionStoreSetup;
+use YezzMedia\Access\Install\ConfigureAccessAuditInstallStep;
 use YezzMedia\Access\Support\PermissionStoreSetup;
 
 use function Pest\Laravel\artisan;
@@ -10,6 +11,7 @@ use function Pest\Laravel\artisan;
 it('fails clearly when the permission store is missing and migrations are not allowed', function (): void {
     $setup = new FakePermissionStoreSetup;
     app()->instance(PermissionStoreSetup::class, $setup);
+    app()->forgetInstance(ConfigureAccessAuditInstallStep::class);
 
     $command = artisan('website:install');
 
@@ -39,6 +41,27 @@ it('runs the full access install flow when migrations are explicitly allowed', f
         ->expectsOutputToContain('Migration execution is enabled for this install run.')
         ->expectsOutputToContain('Status: success')
         ->expectsOutputToContain('Executed install step [publish_permission_config] for package [yezzmedia/laravel-access].')
+        ->expectsOutputToContain('Executed install step [publish_permission_migrations] for package [yezzmedia/laravel-access].')
+        ->expectsOutputToContain('Executed install step [ensure_permission_store_ready] for package [yezzmedia/laravel-access].')
+        ->expectsOutputToContain('Executed install step [sync_permissions] for package [yezzmedia/laravel-access].')
+        ->assertSuccessful();
+});
+
+it('configures access audit persistence when explicitly requested', function (): void {
+    $setup = new FakePermissionStoreSetup;
+    app()->instance(PermissionStoreSetup::class, $setup);
+
+    $command = artisan('website:install', ['--migrate' => true, '--configure-access-audit' => true]);
+
+    if (is_int($command)) {
+        throw new RuntimeException('Expected pending command for website:install.');
+    }
+
+    $command
+        ->expectsOutputToContain('Access audit persistence is enabled for this install run.')
+        ->expectsOutputToContain('Status: success')
+        ->expectsOutputToContain('Executed install step [publish_permission_config] for package [yezzmedia/laravel-access].')
+        ->expectsOutputToContain('Executed install step [configure_access_audit] for package [yezzmedia/laravel-access].')
         ->expectsOutputToContain('Executed install step [publish_permission_migrations] for package [yezzmedia/laravel-access].')
         ->expectsOutputToContain('Executed install step [ensure_permission_store_ready] for package [yezzmedia/laravel-access].')
         ->expectsOutputToContain('Executed install step [sync_permissions] for package [yezzmedia/laravel-access].')

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 use Spatie\Permission\PermissionServiceProvider;
+use YezzMedia\Access\AccessServiceProvider;
 use YezzMedia\Access\Events\PermissionsSynchronized;
 
 /**
@@ -39,6 +40,48 @@ class PermissionStoreSetup
         }
 
         Artisan::call('vendor:publish', $arguments);
+    }
+
+    public function accessConfigPublished(): bool
+    {
+        return File::exists(config_path('access.php'));
+    }
+
+    public function publishAccessConfig(bool $force = false): void
+    {
+        $arguments = [
+            '--provider' => AccessServiceProvider::class,
+        ];
+
+        if ($force) {
+            $arguments['--force'] = true;
+        }
+
+        Artisan::call('vendor:publish', $arguments);
+    }
+
+    public function configureAuditDriver(string $driver): void
+    {
+        if (! $this->accessConfigPublished()) {
+            $this->publishAccessConfig();
+        }
+
+        $path = config_path('access.php');
+        $contents = File::get($path);
+
+        $updated = preg_replace_callback(
+            "/('driver'\\s*=>\\s*)(null|'[^']*')/",
+            static fn (array $matches) => $matches[1]."'{$driver}'",
+            $contents,
+            1,
+        );
+
+        if (! is_string($updated) || $updated === $contents) {
+            throw new RuntimeException('The access config could not be updated to enable audit persistence.');
+        }
+
+        File::put($path, $updated);
+        config()->set('access.audit.driver', $driver);
     }
 
     public function migrationsPublished(): bool
