@@ -18,7 +18,9 @@ use YezzMedia\Foundation\Contracts\DefinesPermissions;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
 use YezzMedia\Foundation\Contracts\ProvidesDoctorChecks;
 use YezzMedia\Foundation\Contracts\ProvidesOpsModules;
+use YezzMedia\Foundation\Contracts\RegistersFeatures;
 use YezzMedia\Foundation\Doctor\DoctorManager;
+use YezzMedia\Foundation\Registry\FeatureRegistry;
 use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
@@ -28,6 +30,13 @@ it('registers the access bootstrap bindings', function (): void {
 
     expect(app(AuthorizationAuditWriter::class))->toBeInstanceOf(NullAuthorizationAuditWriter::class)
         ->and(app(PackageRegistry::class)->has('yezzmedia/laravel-access'))->toBeTrue()
+        ->and(app(FeatureRegistry::class)->forPackage('yezzmedia/laravel-access')->pluck('name')->all())->toBe([
+            'access.permissions',
+            'access.roles',
+            'access.assignments',
+            'access.super_admin',
+            'access.audit',
+        ])
         ->and(app(PermissionRegistry::class)->forPackage('yezzmedia/laravel-access'))->toHaveCount(0)
         ->and(app(OpsModuleRegistry::class)->forPackage('yezzmedia/laravel-access'))->toHaveCount(0)
         ->and($doctorResults->keys()->all())->toContain('permissions_synchronized', 'super_admin_configured')
@@ -72,6 +81,7 @@ it('describes the approved bootstrap surface', function (): void {
 
     expect($package)->toBeInstanceOf(PlatformPackage::class)
         ->and($package)->toBeInstanceOf(DefinesPermissions::class)
+        ->and($package)->toBeInstanceOf(RegistersFeatures::class)
         ->and($package)->toBeInstanceOf(DefinesAuditEvents::class)
         ->and($package)->toBeInstanceOf(DefinesInstallSteps::class)
         ->and($package)->toBeInstanceOf(ProvidesDoctorChecks::class)
@@ -80,6 +90,13 @@ it('describes the approved bootstrap surface', function (): void {
         ->and($metadata->vendor)->toBe('yezzmedia')
         ->and($metadata->packageClass)->toBe(AccessPlatformPackage::class)
         ->and($package->permissionDefinitions())->toBe([])
+        ->and(collect($package->featureDefinitions())->pluck('name')->all())->toBe([
+            'access.permissions',
+            'access.roles',
+            'access.assignments',
+            'access.super_admin',
+            'access.audit',
+        ])
         ->and($package->installSteps())->toHaveCount(4)
         ->and($package->installSteps()[0])->toBeInstanceOf(PublishPermissionConfigInstallStep::class)
         ->and($package->installSteps()[1])->toBeInstanceOf(PublishPermissionMigrationsInstallStep::class)
