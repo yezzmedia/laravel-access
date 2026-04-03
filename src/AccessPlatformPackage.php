@@ -16,7 +16,9 @@ use YezzMedia\Foundation\Contracts\DefinesPermissions;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
 use YezzMedia\Foundation\Contracts\ProvidesDoctorChecks;
 use YezzMedia\Foundation\Contracts\ProvidesOpsModules;
+use YezzMedia\Foundation\Contracts\RegistersFeatures;
 use YezzMedia\Foundation\Data\AuditEventDefinition;
+use YezzMedia\Foundation\Data\FeatureDefinition;
 use YezzMedia\Foundation\Data\OpsModuleDefinition;
 use YezzMedia\Foundation\Data\PackageMetadata;
 use YezzMedia\Foundation\Data\PermissionDefinition;
@@ -26,7 +28,7 @@ use YezzMedia\Foundation\Install\InstallStep;
 /**
  * Describes the access package surface that foundation should register.
  */
-final class AccessPlatformPackage implements DefinesAuditEvents, DefinesInstallSteps, DefinesPermissions, PlatformPackage, ProvidesDoctorChecks, ProvidesOpsModules
+final class AccessPlatformPackage implements DefinesAuditEvents, DefinesInstallSteps, DefinesPermissions, PlatformPackage, ProvidesDoctorChecks, ProvidesOpsModules, RegistersFeatures
 {
     public function metadata(): PackageMetadata
     {
@@ -44,6 +46,45 @@ final class AccessPlatformPackage implements DefinesAuditEvents, DefinesInstallS
     public function permissionDefinitions(): array
     {
         return [];
+    }
+
+    /**
+     * @return array<int, FeatureDefinition>
+     */
+    public function featureDefinitions(): array
+    {
+        return [
+            new FeatureDefinition(
+                'access.permissions',
+                'yezzmedia/laravel-access',
+                'Permission synchronization',
+                'Synchronizes declared platform permissions into the persistent authorization store and exposes their readiness posture.',
+            ),
+            new FeatureDefinition(
+                'access.roles',
+                'yezzmedia/laravel-access',
+                'Role synchronization',
+                'Manages persisted role composition and role synchronization flows for platform authorization.',
+            ),
+            new FeatureDefinition(
+                'access.assignments',
+                'yezzmedia/laravel-access',
+                'User role assignments',
+                'Assigns and removes persisted roles for users through the access runtime.',
+            ),
+            new FeatureDefinition(
+                'access.super_admin',
+                'yezzmedia/laravel-access',
+                'Super-admin safety',
+                'Bootstraps and safeguards the privileged super-admin authorization posture.',
+            ),
+            new FeatureDefinition(
+                'access.audit',
+                'yezzmedia/laravel-access',
+                'Authorization audit',
+                'Translates access runtime events into normalized audit records when an audit backend is available.',
+            ),
+        ];
     }
 
     /**
