@@ -223,29 +223,32 @@ php artisan website:install --only=yezzmedia/laravel-access
 php artisan website:install --only=yezzmedia/laravel-access --migrate
 php artisan website:install --only=yezzmedia/laravel-access --refresh-publish
 php artisan website:install --only=yezzmedia/laravel-access --configure-access-audit
+php artisan website:install --configure-audit --audit-package=yezzmedia/laravel-access
+php artisan website:install --configure-audit --audit-package=all
 ```
 
 Important behavior:
 
 - `--migrate` is required when the permission store is missing or when published access migrations are still pending
 - `--refresh-publish` refreshes already published access resources intentionally instead of doing so during ordinary runs
-- `--configure-access-audit` is the current access-specific shortcut for enabling `access.audit.driver=activitylog`
+- `--configure-audit --audit-package=yezzmedia/laravel-access` runs only the access audit setup step and enables `access.audit.driver=activitylog`
+- `--configure-access-audit` remains available as a deprecated access-only shortcut for the same audit setup
 - permission synchronization is blocked until pending published access migrations are resolved
 
 `PermissionStoreSetup` owns these readiness checks and host-side setup actions for the runtime.
 
-### Planned audit installer migration
+### Audit installer compatibility
 
-The planned foundation-wide audit installer keeps access compatible while moving audit selection to a generic package-based flow.
+Foundation now exposes a generic audit installer while keeping access compatible with the older shortcut.
 
-Planned target commands:
+Supported audit commands:
 
 ```bash
 php artisan website:install --configure-audit --audit-package=yezzmedia/laravel-access
 php artisan website:install --configure-audit --audit-package=all
 ```
 
-Planned transition rule:
+Compatibility rule:
 
 - `--configure-access-audit` remains temporarily available as a deprecated alias for access only
 
