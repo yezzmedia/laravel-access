@@ -11,6 +11,8 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 - foundation-driven install workflow through `DefinesInstallSteps`
 - host setup orchestration through `PermissionStoreSetup`
 - install steps for publishing config, publishing migrations, preparing the permission store, and synchronizing permissions
+- `ConfigureAccessAuditInstallStep` for explicitly enabling persisted access audit through the central installer
+- `AccessAuditConfiguredCheck` for reporting whether access audit persistence is enabled, disabled, or misconfigured
 - `SuperAdminSafetyGuard` to prevent unsafe removal of the configured super-admin role below the enforced minimum operator count
 
 ### Changed
@@ -21,6 +23,7 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 ### Documentation
 
 - documented the central foundation install flow and the super-admin role-removal safety behavior in the package README
+- documented the current `--configure-access-audit` shortcut and the planned migration to the generic `--configure-audit --audit-package=*` flow
 
 ## [0.1.0] - 2026-03-30
 

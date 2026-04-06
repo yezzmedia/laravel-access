@@ -179,6 +179,10 @@ If `activitylog` is configured but `spatie/laravel-activitylog` is not installed
 
 The package registers two doctor checks through foundation:
 
+- `access_audit_configured`
+  - `passed` when `access.audit.driver` is configured for `activitylog`
+  - `warning` when access audit persistence is intentionally disabled
+  - `failed` when an unsupported audit driver is configured
 - `permissions_synchronized`
   - `passed` when declared permissions exist in persistence
   - `warning` when stale extra permissions remain persisted
@@ -218,15 +222,32 @@ Use the central installer like this:
 php artisan website:install --only=yezzmedia/laravel-access
 php artisan website:install --only=yezzmedia/laravel-access --migrate
 php artisan website:install --only=yezzmedia/laravel-access --refresh-publish
+php artisan website:install --only=yezzmedia/laravel-access --configure-access-audit
 ```
 
 Important behavior:
 
 - `--migrate` is required when the permission store is missing or when published access migrations are still pending
 - `--refresh-publish` refreshes already published access resources intentionally instead of doing so during ordinary runs
+- `--configure-access-audit` is the current access-specific shortcut for enabling `access.audit.driver=activitylog`
 - permission synchronization is blocked until pending published access migrations are resolved
 
 `PermissionStoreSetup` owns these readiness checks and host-side setup actions for the runtime.
+
+### Planned audit installer migration
+
+The planned foundation-wide audit installer keeps access compatible while moving audit selection to a generic package-based flow.
+
+Planned target commands:
+
+```bash
+php artisan website:install --configure-audit --audit-package=yezzmedia/laravel-access
+php artisan website:install --configure-audit --audit-package=all
+```
+
+Planned transition rule:
+
+- `--configure-access-audit` remains temporarily available as a deprecated alias for access only
 
 ## Consumer package integration
 
