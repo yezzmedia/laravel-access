@@ -19,11 +19,12 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 
 - `UserRoleManager` now enforces super-admin removal safety before mutating assignments
 - access install readiness now treats pending published access migrations as blocking setup work
+- `ConfigureAccessAuditInstallStep` now participates in the generic audit installer flow and still supports the deprecated legacy alias
 
 ### Documentation
 
 - documented the central foundation install flow and the super-admin role-removal safety behavior in the package README
-- documented the current `--configure-access-audit` shortcut and the planned migration to the generic `--configure-audit --audit-package=*` flow
+- documented the generic `--configure-audit --audit-package=*` flow and the deprecated `--configure-access-audit` compatibility alias
 
 ## [0.1.0] - 2026-03-30
 

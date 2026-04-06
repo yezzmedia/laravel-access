@@ -6,10 +6,10 @@ namespace YezzMedia\Access\Install;
 
 use YezzMedia\Access\Support\PermissionStoreSetup;
 use YezzMedia\Foundation\Data\InstallContext;
-use YezzMedia\Foundation\Install\InstallStep;
+use YezzMedia\Foundation\Install\AuditInstallStep;
 use YezzMedia\Foundation\Install\OptionalInstallStep;
 
-final class ConfigureAccessAuditInstallStep implements InstallStep, OptionalInstallStep
+final class ConfigureAccessAuditInstallStep implements AuditInstallStep, OptionalInstallStep
 {
     public function __construct() {}
 
@@ -30,7 +30,7 @@ final class ConfigureAccessAuditInstallStep implements InstallStep, OptionalInst
 
     public function shouldRun(InstallContext $context): bool
     {
-        return $context->configureAccessAudit;
+        return $context->shouldConfigureAuditFor($this->package());
     }
 
     public function handle(InstallContext $context): void

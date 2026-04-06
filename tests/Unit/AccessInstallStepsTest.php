@@ -86,9 +86,10 @@ it('configures access audit persistence only when requested', function (): void 
     $step = new ConfigureAccessAuditInstallStep($setup);
 
     expect($step->shouldRun(new InstallContext))->toBeFalse()
+        ->and($step->shouldRun(new InstallContext(configureAudit: true, auditPackages: ['yezzmedia/laravel-access'])))->toBeTrue()
         ->and($step->shouldRun(new InstallContext(configureAccessAudit: true)))->toBeTrue();
 
-    $step->handle(new InstallContext(configureAccessAudit: true));
+    $step->handle(new InstallContext(configureAudit: true, auditPackages: ['yezzmedia/laravel-access']));
 
     expect($setup->calls)->toBe(['publish_access_config', 'configure_access_audit'])
         ->and($setup->auditDriver)->toBe('activitylog')

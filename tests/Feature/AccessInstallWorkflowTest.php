@@ -58,13 +58,35 @@ it('configures access audit persistence when explicitly requested', function ():
     }
 
     $command
-        ->expectsOutputToContain('Access audit persistence is enabled for this install run.')
+        ->expectsOutputToContain('Audit persistence configuration is enabled for this install run.')
+        ->expectsOutputToContain('The [--configure-access-audit] option is deprecated.')
+        ->expectsOutputToContain('Migration execution is enabled for this install run.')
+        ->expectsOutputToContain('Audit packages: yezzmedia/laravel-access')
         ->expectsOutputToContain('Status: success')
-        ->expectsOutputToContain('Executed install step [publish_permission_config] for package [yezzmedia/laravel-access].')
         ->expectsOutputToContain('Executed install step [configure_access_audit] for package [yezzmedia/laravel-access].')
-        ->expectsOutputToContain('Executed install step [publish_permission_migrations] for package [yezzmedia/laravel-access].')
-        ->expectsOutputToContain('Executed install step [ensure_permission_store_ready] for package [yezzmedia/laravel-access].')
-        ->expectsOutputToContain('Executed install step [sync_permissions] for package [yezzmedia/laravel-access].')
+        ->doesntExpectOutputToContain('Executed install step [publish_permission_migrations]')
+        ->assertSuccessful();
+});
+
+it('configures access audit persistence through the generic audit flow', function (): void {
+    $setup = new FakePermissionStoreSetup;
+    app()->instance(PermissionStoreSetup::class, $setup);
+
+    $command = artisan('website:install', [
+        '--configure-audit' => true,
+        '--audit-package' => ['yezzmedia/laravel-access'],
+    ]);
+
+    if (is_int($command)) {
+        throw new RuntimeException('Expected pending command for website:install.');
+    }
+
+    $command
+        ->expectsOutputToContain('Audit persistence configuration is enabled for this install run.')
+        ->expectsOutputToContain('Audit packages: yezzmedia/laravel-access')
+        ->expectsOutputToContain('Status: success')
+        ->expectsOutputToContain('Executed install step [configure_access_audit] for package [yezzmedia/laravel-access].')
+        ->doesntExpectOutputToContain('Executed install step [publish_permission_migrations]')
         ->assertSuccessful();
 });
 
