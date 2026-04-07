@@ -177,7 +177,7 @@ If `activitylog` is configured but `spatie/laravel-activitylog` is not installed
 
 ## Doctor checks
 
-The package registers two doctor checks through foundation:
+The package registers three doctor checks through foundation:
 
 - `access_audit_configured`
   - `passed` when `access.audit.driver` is configured for `activitylog`
