@@ -135,6 +135,33 @@ app(UserRoleManager::class)->removeRole($user, 'content_editor', $actor);
 - requires `access.super_admin.role_name` when enabled
 - returns `true` for users with the configured role and `null` otherwise
 
+When the configured super-admin path is active, the package also emits governance visibility through the optional ops-security broker integration described below.
+
+### Security governance visibility
+
+`AccessPlatformPackage` now declares the package security-governance surface through foundation:
+
+- security request: `access.request.identity.privileged-mfa`
+- security requirement: `access.identity.privileged-mfa`
+
+The package uses `AccessSecurityVisibilityReporter` as an optional runtime bridge to `yezzmedia/laravel-ops-security`.
+
+Current behavior:
+
+- super-admin bootstrap can submit privileged-account MFA visibility requests
+- super-admin gate usage can record runtime evidence for privileged account access
+- the super-admin doctor check can emit the same governance signal during diagnostics
+- the integration degrades silently when the `YezzMedia\OpsSecurity\Contracts\SecurityRequestBroker` contract is not installed or not bound
+
+The current request preview schema includes:
+
+- `role`
+- `channel`
+- `ability`
+- `actor_reference`
+
+`actor_reference` is declared as masked preview data. This keeps operator visibility explicit without turning the access package into a raw identity export surface.
+
 ## Permission lookup and cache invalidation
 
 `PermissionMap` exposes a narrow read-only lookup surface over persisted permissions.
@@ -179,7 +206,8 @@ If `activitylog` is configured but `spatie/laravel-activitylog` is not installed
 
 The package registers three doctor checks through foundation:
 
-- `access_audit_configured`
+- `audit_configured`
+  - `skipped` when the host ops audit provider is not configured in the current environment
   - `passed` when `access.audit.driver` is configured for `activitylog`
   - `warning` when access audit persistence is intentionally disabled
   - `failed` when an unsupported audit driver is configured
@@ -257,6 +285,8 @@ Compatibility rule:
 Consumer packages should declare permissions through the foundation `DefinesPermissions` capability instead of writing directly into access internals.
 
 Access reads those declarations through foundation registries and turns them into persistent runtime state.
+
+Packages that want central security review should also declare security requirements and requests through foundation, then let `yezzmedia/laravel-ops-security` aggregate and verify them. Access itself uses that model for privileged-account MFA visibility rather than inventing a package-local governance surface.
 
 ## Testing support
 

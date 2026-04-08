@@ -14,17 +14,24 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 - `ConfigureAccessAuditInstallStep` for explicitly enabling persisted access audit through the central installer
 - `AccessAuditConfiguredCheck` for reporting whether access audit persistence is enabled, disabled, or misconfigured
 - `SuperAdminSafetyGuard` to prevent unsafe removal of the configured super-admin role below the enforced minimum operator count
+- security-governance declarations through foundation:
+  - `access.request.identity.privileged-mfa`
+  - `access.identity.privileged-mfa`
+- optional runtime visibility bridge through `AccessSecurityVisibilityReporter` for ops-security request and evidence submission
 
 ### Changed
 
 - `UserRoleManager` now enforces super-admin removal safety before mutating assignments
 - access install readiness now treats pending published access migrations as blocking setup work
 - `ConfigureAccessAuditInstallStep` now participates in the generic audit installer flow and still supports the deprecated legacy alias
+- super-admin bootstrap and diagnostics now emit privileged-account governance visibility when the optional ops-security broker is available
+- permission-store readiness checks now reuse memoized migration and table state so ops access pages stop re-checking the same store state inside one request
 
 ### Documentation
 
 - documented the central foundation install flow and the super-admin role-removal safety behavior in the package README
 - documented the generic `--configure-audit --audit-package=*` flow and the deprecated `--configure-access-audit` compatibility alias
+- documented the implemented security-governance declarations, optional ops-security broker integration, and the corrected doctor-check key names in the package README
 
 ## [0.1.0] - 2026-03-30
 
