@@ -18,6 +18,21 @@ use YezzMedia\Access\Events\PermissionsSynchronized;
  */
 class PermissionStoreSetup
 {
+    /**
+     * @var array<string, bool>|null
+     */
+    private ?array $requiredTableStates = null;
+
+    /**
+     * @var array<int, string>|null
+     */
+    private ?array $publishedMigrationPathsMemo = null;
+
+    /**
+     * @var array<int, string>|null
+     */
+    private ?array $publishableMigrationNamesMemo = null;
+
     public function __construct(
         private readonly PermissionSyncService $permissions,
         private readonly Migrator $migrator,
@@ -95,12 +110,15 @@ class PermissionStoreSetup
             '--provider' => PermissionServiceProvider::class,
             '--tag' => 'permission-migrations',
         ]);
+
+        $this->publishedMigrationPathsMemo = null;
+        $this->publishableMigrationNamesMemo = null;
     }
 
     public function permissionStoreReady(): bool
     {
-        foreach ($this->requiredTables() as $table) {
-            if (! Schema::hasTable($table)) {
+        foreach ($this->requiredTableStates() as $exists) {
+            if (! $exists) {
                 return false;
             }
         }
@@ -141,6 +159,8 @@ class PermissionStoreSetup
         Artisan::call('migrate', [
             '--force' => true,
         ]);
+
+        $this->requiredTableStates = null;
     }
 
     public function synchronizePermissions(): PermissionsSynchronized
@@ -153,10 +173,14 @@ class PermissionStoreSetup
      */
     public function publishedMigrationPaths(): array
     {
+        if (is_array($this->publishedMigrationPathsMemo)) {
+            return $this->publishedMigrationPathsMemo;
+        }
+
         $migrationsPath = database_path('migrations');
 
         if (! File::isDirectory($migrationsPath)) {
-            return [];
+            return $this->publishedMigrationPathsMemo = [];
         }
 
         $published = [];
@@ -167,7 +191,7 @@ class PermissionStoreSetup
             }
         }
 
-        return $published;
+        return $this->publishedMigrationPathsMemo = $published;
     }
 
     public function hasMissingPublishedMigrations(): bool
@@ -206,12 +230,34 @@ class PermissionStoreSetup
      */
     private function publishableMigrationNames(): array
     {
+        if (is_array($this->publishableMigrationNamesMemo)) {
+            return $this->publishableMigrationNamesMemo;
+        }
+
         $paths = PermissionServiceProvider::pathsToPublish(PermissionServiceProvider::class, 'permission-migrations');
 
-        return array_values(array_unique(array_map(
+        return $this->publishableMigrationNamesMemo = array_values(array_unique(array_map(
             fn (string $sourcePath): string => $this->normalizeMigrationName(basename($sourcePath)),
             array_keys($paths),
         )));
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    private function requiredTableStates(): array
+    {
+        if (is_array($this->requiredTableStates)) {
+            return $this->requiredTableStates;
+        }
+
+        $states = [];
+
+        foreach ($this->requiredTables() as $table) {
+            $states[$table] = Schema::hasTable($table);
+        }
+
+        return $this->requiredTableStates = $states;
     }
 
     private function normalizeMigrationName(string $filename): string

@@ -11,10 +11,13 @@ use YezzMedia\Access\Install\ConfigureAccessAuditInstallStep;
 use YezzMedia\Access\Install\EnsurePermissionStoreReadyInstallStep;
 use YezzMedia\Access\Install\PublishPermissionConfigInstallStep;
 use YezzMedia\Access\Install\PublishPermissionMigrationsInstallStep;
+use YezzMedia\Access\Install\SeedRolesFromPermissionHintsInstallStep;
 use YezzMedia\Access\Install\SyncPermissionsInstallStep;
 use YezzMedia\Foundation\Contracts\DefinesAuditEvents;
 use YezzMedia\Foundation\Contracts\DefinesInstallSteps;
 use YezzMedia\Foundation\Contracts\DefinesPermissions;
+use YezzMedia\Foundation\Contracts\DefinesSecurityRequests;
+use YezzMedia\Foundation\Contracts\DefinesSecurityRequirements;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
 use YezzMedia\Foundation\Contracts\ProvidesDoctorChecks;
 use YezzMedia\Foundation\Contracts\ProvidesOpsModules;
@@ -24,13 +27,15 @@ use YezzMedia\Foundation\Data\FeatureDefinition;
 use YezzMedia\Foundation\Data\OpsModuleDefinition;
 use YezzMedia\Foundation\Data\PackageMetadata;
 use YezzMedia\Foundation\Data\PermissionDefinition;
+use YezzMedia\Foundation\Data\SecurityRequestDefinition;
+use YezzMedia\Foundation\Data\SecurityRequirementDefinition;
 use YezzMedia\Foundation\Doctor\DoctorCheck;
 use YezzMedia\Foundation\Install\InstallStep;
 
 /**
  * Describes the access package surface that foundation should register.
  */
-final class AccessPlatformPackage implements DefinesAuditEvents, DefinesInstallSteps, DefinesPermissions, PlatformPackage, ProvidesDoctorChecks, ProvidesOpsModules, RegistersFeatures
+final class AccessPlatformPackage implements DefinesAuditEvents, DefinesInstallSteps, DefinesPermissions, DefinesSecurityRequests, DefinesSecurityRequirements, PlatformPackage, ProvidesDoctorChecks, ProvidesOpsModules, RegistersFeatures
 {
     public function metadata(): PackageMetadata
     {
@@ -145,6 +150,7 @@ final class AccessPlatformPackage implements DefinesAuditEvents, DefinesInstallS
             app(PublishPermissionMigrationsInstallStep::class),
             app(EnsurePermissionStoreReadyInstallStep::class),
             app(SyncPermissionsInstallStep::class),
+            app(SeedRolesFromPermissionHintsInstallStep::class),
         ];
     }
 
@@ -166,5 +172,54 @@ final class AccessPlatformPackage implements DefinesAuditEvents, DefinesInstallS
     public function opsModuleDefinitions(): array
     {
         return [];
+    }
+
+    /**
+     * @return array<int, SecurityRequestDefinition>
+     */
+    public function securityRequestDefinitions(): array
+    {
+        return [
+            new SecurityRequestDefinition(
+                key: 'access.request.identity.privileged-mfa',
+                package: 'yezzmedia/laravel-access',
+                domain: 'identity',
+                control: 'privileged_mfa',
+                scope: 'super-admin',
+                requestedLevel: 'required',
+                requestedEnforcementMode: 'observe_only',
+                description: 'Access may submit privileged-operator MFA hardening requests for super-admin posture visibility.',
+                payloadSchema: [
+                    'role' => 'Configured privileged role name.',
+                    'channel' => 'Producing access runtime channel.',
+                    'ability' => 'Observed authorization ability when available.',
+                    'actor_reference' => 'Masked privileged operator reference.',
+                ],
+                allowedPreviewFields: ['role', 'channel', 'ability', 'actor_reference'],
+                maskedFields: ['actor_reference'],
+                notes: 'Access produces masked operator hardening requests and runtime evidence without exposing raw operator identifiers.',
+            ),
+        ];
+    }
+
+    /**
+     * @return array<int, SecurityRequirementDefinition>
+     */
+    public function securityRequirementDefinitions(): array
+    {
+        return [
+            new SecurityRequirementDefinition(
+                key: 'access.identity.privileged-mfa',
+                package: 'yezzmedia/laravel-access',
+                domain: 'identity',
+                control: 'privileged_mfa',
+                level: 'required',
+                scope: 'super-admin',
+                description: 'Super-admin capable operators should satisfy stronger account hardening expectations such as MFA or passkeys.',
+                enforcementMode: 'observe_only',
+                appliesTo: ['super-admin', 'gate-before'],
+                notes: 'Access declares privileged account hardening intent while leaving concrete MFA and passkey enforcement to the appropriate auth layer.',
+            ),
+        ];
     }
 }

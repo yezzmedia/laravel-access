@@ -2,14 +2,49 @@
 
 declare(strict_types=1);
 
+use Spatie\Permission\Models\Role;
 use Tests\Fixtures\FakePermissionStoreSetup;
 use YezzMedia\Access\Install\ConfigureAccessAuditInstallStep;
 use YezzMedia\Access\Install\EnsurePermissionStoreReadyInstallStep;
 use YezzMedia\Access\Install\PublishPermissionConfigInstallStep;
 use YezzMedia\Access\Install\PublishPermissionMigrationsInstallStep;
+use YezzMedia\Access\Install\SeedRolesFromPermissionHintsInstallStep;
 use YezzMedia\Access\Install\SyncPermissionsInstallStep;
 use YezzMedia\Access\Support\PermissionStoreSetup;
+use YezzMedia\Access\Support\PermissionSyncService;
+use YezzMedia\Access\Support\RoleManager;
+use YezzMedia\Foundation\Contracts\DefinesPermissions;
+use YezzMedia\Foundation\Contracts\PlatformPackage;
 use YezzMedia\Foundation\Data\InstallContext;
+use YezzMedia\Foundation\Data\PackageMetadata;
+use YezzMedia\Foundation\Data\PermissionDefinition;
+use YezzMedia\Foundation\Support\PlatformPackageRegistrar;
+
+function registerAccessInstallPermissionPackage(string $name, array $permissions): void
+{
+    app(PlatformPackageRegistrar::class)->register(new class($name, $permissions) implements DefinesPermissions, PlatformPackage
+    {
+        public function __construct(
+            private readonly string $name,
+            private readonly array $permissions,
+        ) {}
+
+        public function metadata(): PackageMetadata
+        {
+            return new PackageMetadata(
+                name: $this->name,
+                vendor: 'yezzmedia',
+                description: 'Access install step test package.',
+                packageClass: self::class,
+            );
+        }
+
+        public function permissionDefinitions(): array
+        {
+            return $this->permissions;
+        }
+    });
+}
 
 it('refreshes the published permission config only when explicitly requested', function (): void {
     $setup = new FakePermissionStoreSetup(hasPublishedConfig: true);
@@ -78,6 +113,54 @@ it('reuses the existing permission sync runtime inside the install workflow', fu
     $step->handle(new InstallContext);
 
     expect($setup->calls)->toBe(['sync_permissions']);
+});
+
+it('seeds roles from permission hints during install when role hints are enabled', function (): void {
+    config()->set('access.roles.apply_default_role_hints', true);
+
+    registerAccessInstallPermissionPackage('yezzmedia/laravel-content', [
+        new PermissionDefinition(
+            'content.pages.publish',
+            'yezzmedia/laravel-content',
+            'Publish pages',
+            defaultRoleHints: ['super-admin'],
+        ),
+        new PermissionDefinition(
+            'content.pages.archive',
+            'yezzmedia/laravel-content',
+            'Archive pages',
+            defaultRoleHints: ['super-admin'],
+        ),
+    ]);
+
+    app(PermissionSyncService::class)->syncPackage('yezzmedia/laravel-content');
+
+    $step = app(SeedRolesFromPermissionHintsInstallStep::class);
+
+    expect($step->shouldRun(new InstallContext))->toBeTrue();
+
+    $step->handle(new InstallContext);
+
+    $role = app(RoleManager::class)->findRole('super-admin');
+
+    expect($role)->toBeInstanceOf(Role::class);
+
+    if (! $role instanceof Role) {
+        throw new RuntimeException('Expected persisted seeded role instance.');
+    }
+
+    expect($role->permissions->pluck('name')->sort()->values()->all())->toBe([
+        'content.pages.archive',
+        'content.pages.publish',
+    ]);
+});
+
+it('skips role hint seeding during install when role hints are disabled', function (): void {
+    config()->set('access.roles.apply_default_role_hints', false);
+
+    $step = app(SeedRolesFromPermissionHintsInstallStep::class);
+
+    expect($step->shouldRun(new InstallContext))->toBeFalse();
 });
 
 it('configures access audit persistence only when requested', function (): void {

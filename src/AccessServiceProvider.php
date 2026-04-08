@@ -17,6 +17,7 @@ use YezzMedia\Access\Events\RolesSynchronized;
 use YezzMedia\Access\Events\UserRoleAssigned;
 use YezzMedia\Access\Events\UserRoleRemoved;
 use YezzMedia\Access\Listeners\AuthorizationAuditListener;
+use YezzMedia\Access\Support\AccessSecurityVisibilityReporter;
 use YezzMedia\Access\Support\ActivityLogAuthorizationAuditWriter;
 use YezzMedia\Access\Support\NullAuthorizationAuditWriter;
 use YezzMedia\Access\Support\PermissionCacheManager;
@@ -52,6 +53,7 @@ class AccessServiceProvider extends PackageServiceProvider
         $this->app->singleton(PermissionSyncService::class);
         $this->app->singleton(PermissionStoreSetup::class);
         $this->app->singleton(RoleManager::class);
+        $this->app->singleton(AccessSecurityVisibilityReporter::class);
         $this->app->singleton(SuperAdminGateBootstrapper::class);
         $this->app->singleton(UserRoleManager::class);
     }
