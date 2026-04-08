@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YezzMedia\Access\Doctor;
 
 use Throwable;
+use YezzMedia\Access\Support\AccessSecurityVisibilityReporter;
 use YezzMedia\Access\Support\SuperAdminGateBootstrapper;
 use YezzMedia\Foundation\Data\DoctorResult;
 use YezzMedia\Foundation\Doctor\DoctorCheck;
@@ -20,6 +21,7 @@ final readonly class SuperAdminConfiguredCheck implements DoctorCheck
 
     public function __construct(
         private SuperAdminGateBootstrapper $bootstrapper,
+        private AccessSecurityVisibilityReporter $securityVisibility,
     ) {}
 
     public function key(): string
@@ -55,6 +57,13 @@ final readonly class SuperAdminConfiguredCheck implements DoctorCheck
                 ],
             );
         }
+
+        $this->securityVisibility->submitPrivilegedMfaRequest(
+            roleName: $roleName,
+            channel: 'doctor_check',
+            source: self::class,
+            actorReference: 'system',
+        );
 
         return $this->result(
             status: 'passed',

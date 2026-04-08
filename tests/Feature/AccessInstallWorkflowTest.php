@@ -39,11 +39,31 @@ it('runs the full access install flow when migrations are explicitly allowed', f
 
     $command
         ->expectsOutputToContain('Migration execution is enabled for this install run.')
-        ->expectsOutputToContain('Status: success')
+        ->expectsOutputToContain('Status: partial')
         ->expectsOutputToContain('Executed install step [publish_permission_config] for package [yezzmedia/laravel-access].')
         ->expectsOutputToContain('Executed install step [publish_permission_migrations] for package [yezzmedia/laravel-access].')
         ->expectsOutputToContain('Executed install step [ensure_permission_store_ready] for package [yezzmedia/laravel-access].')
         ->expectsOutputToContain('Executed install step [sync_permissions] for package [yezzmedia/laravel-access].')
+        ->expectsOutputToContain('Skipped install step [seed_roles_from_permission_hints] for package [yezzmedia/laravel-access].')
+        ->assertSuccessful();
+});
+
+it('seeds roles from permission hints during install when role hints are enabled', function (): void {
+    $setup = new FakePermissionStoreSetup;
+    app()->instance(PermissionStoreSetup::class, $setup);
+    config()->set('access.roles.apply_default_role_hints', true);
+
+    $command = artisan('website:install', ['--migrate' => true]);
+
+    if (is_int($command)) {
+        throw new RuntimeException('Expected pending command for website:install.');
+    }
+
+    $command
+        ->expectsOutputToContain('Migration execution is enabled for this install run.')
+        ->expectsOutputToContain('Status: success')
+        ->expectsOutputToContain('Executed install step [sync_permissions] for package [yezzmedia/laravel-access].')
+        ->expectsOutputToContain('Executed install step [seed_roles_from_permission_hints] for package [yezzmedia/laravel-access].')
         ->assertSuccessful();
 });
 

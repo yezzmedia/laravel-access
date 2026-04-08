@@ -12,12 +12,15 @@ use YezzMedia\Access\Install\ConfigureAccessAuditInstallStep;
 use YezzMedia\Access\Install\EnsurePermissionStoreReadyInstallStep;
 use YezzMedia\Access\Install\PublishPermissionConfigInstallStep;
 use YezzMedia\Access\Install\PublishPermissionMigrationsInstallStep;
+use YezzMedia\Access\Install\SeedRolesFromPermissionHintsInstallStep;
 use YezzMedia\Access\Install\SyncPermissionsInstallStep;
 use YezzMedia\Access\Support\ActivityLogAuthorizationAuditWriter;
 use YezzMedia\Access\Support\NullAuthorizationAuditWriter;
 use YezzMedia\Foundation\Contracts\DefinesAuditEvents;
 use YezzMedia\Foundation\Contracts\DefinesInstallSteps;
 use YezzMedia\Foundation\Contracts\DefinesPermissions;
+use YezzMedia\Foundation\Contracts\DefinesSecurityRequests;
+use YezzMedia\Foundation\Contracts\DefinesSecurityRequirements;
 use YezzMedia\Foundation\Contracts\PlatformPackage;
 use YezzMedia\Foundation\Contracts\ProvidesDoctorChecks;
 use YezzMedia\Foundation\Contracts\ProvidesOpsModules;
@@ -27,6 +30,8 @@ use YezzMedia\Foundation\Registry\FeatureRegistry;
 use YezzMedia\Foundation\Registry\OpsModuleRegistry;
 use YezzMedia\Foundation\Registry\PackageRegistry;
 use YezzMedia\Foundation\Registry\PermissionRegistry;
+use YezzMedia\Foundation\Registry\SecurityRequestRegistry;
+use YezzMedia\Foundation\Registry\SecurityRequirementRegistry;
 
 it('registers the access bootstrap bindings', function (): void {
     config()->set('ops.integrations.audit.provider', ActivitylogServiceProvider::class);
@@ -44,6 +49,12 @@ it('registers the access bootstrap bindings', function (): void {
         ])
         ->and(app(PermissionRegistry::class)->forPackage('yezzmedia/laravel-access'))->toHaveCount(0)
         ->and(app(OpsModuleRegistry::class)->forPackage('yezzmedia/laravel-access'))->toHaveCount(0)
+        ->and(app(SecurityRequestRegistry::class)->forPackage('yezzmedia/laravel-access')->pluck('key')->all())->toBe([
+            'access.request.identity.privileged-mfa',
+        ])
+        ->and(app(SecurityRequirementRegistry::class)->forPackage('yezzmedia/laravel-access')->pluck('key')->all())->toBe([
+            'access.identity.privileged-mfa',
+        ])
         ->and($doctorResults->keys()->all())->toContain('audit_configured', 'permissions_synchronized', 'super_admin_configured')
         ->and($doctorResults->get('audit_configured')?->status)->toBe('warning')
         ->and($doctorResults->get('permissions_synchronized')?->status)->toBe('skipped')
@@ -90,6 +101,8 @@ it('describes the approved bootstrap surface', function (): void {
         ->and($package)->toBeInstanceOf(RegistersFeatures::class)
         ->and($package)->toBeInstanceOf(DefinesAuditEvents::class)
         ->and($package)->toBeInstanceOf(DefinesInstallSteps::class)
+        ->and($package)->toBeInstanceOf(DefinesSecurityRequests::class)
+        ->and($package)->toBeInstanceOf(DefinesSecurityRequirements::class)
         ->and($package)->toBeInstanceOf(ProvidesDoctorChecks::class)
         ->and($package)->toBeInstanceOf(ProvidesOpsModules::class)
         ->and($metadata->name)->toBe('yezzmedia/laravel-access')
@@ -103,17 +116,24 @@ it('describes the approved bootstrap surface', function (): void {
             'access.super_admin',
             'access.audit',
         ])
-        ->and($package->installSteps())->toHaveCount(5)
+        ->and($package->installSteps())->toHaveCount(6)
         ->and($package->installSteps()[0])->toBeInstanceOf(PublishPermissionConfigInstallStep::class)
         ->and($package->installSteps()[1])->toBeInstanceOf(ConfigureAccessAuditInstallStep::class)
         ->and($package->installSteps()[2])->toBeInstanceOf(PublishPermissionMigrationsInstallStep::class)
         ->and($package->installSteps()[3])->toBeInstanceOf(EnsurePermissionStoreReadyInstallStep::class)
         ->and($package->installSteps()[4])->toBeInstanceOf(SyncPermissionsInstallStep::class)
+        ->and($package->installSteps()[5])->toBeInstanceOf(SeedRolesFromPermissionHintsInstallStep::class)
         ->and($package->doctorChecks())->toHaveCount(3)
         ->and($package->doctorChecks()[0])->toBeInstanceOf(AccessAuditConfiguredCheck::class)
         ->and($package->doctorChecks()[1])->toBeInstanceOf(PermissionsSynchronizedCheck::class)
         ->and($package->doctorChecks()[2])->toBeInstanceOf(SuperAdminConfiguredCheck::class)
         ->and($package->opsModuleDefinitions())->toBe([])
+        ->and(collect($package->securityRequestDefinitions())->pluck('key')->all())->toBe([
+            'access.request.identity.privileged-mfa',
+        ])
+        ->and(collect($package->securityRequirementDefinitions())->pluck('key')->all())->toBe([
+            'access.identity.privileged-mfa',
+        ])
         ->and($auditEvents->keys()->all())->toBe([
             'access.permissions.synchronized',
             'access.roles.synchronized',
