@@ -70,6 +70,53 @@ return [
 
 ## What The Package Provides
 
+### Foundation registration surface
+
+`AccessPlatformPackage` declares the stable access surface through foundation.
+
+Declared features:
+
+- `access.permissions`
+- `access.roles`
+- `access.assignments`
+- `access.super_admin`
+- `access.audit`
+
+Declared audit events:
+
+- `access.permissions.synchronized`
+- `access.roles.synchronized`
+- `access.user_role.assigned`
+- `access.user_role.removed`
+
+Declared install steps:
+
+- `PublishPermissionConfigInstallStep`
+- `ConfigureAccessAuditInstallStep`
+- `PublishPermissionMigrationsInstallStep`
+- `EnsurePermissionStoreReadyInstallStep`
+- `SyncPermissionsInstallStep`
+- `SeedRolesFromPermissionHintsInstallStep`
+
+Declared doctor checks:
+
+- `AccessAuditConfiguredCheck`
+- `PermissionsSynchronizedCheck`
+- `SuperAdminConfiguredCheck`
+
+Declared security governance entries:
+
+- request: `access.request.identity.privileged-mfa`
+- requirement: `access.identity.privileged-mfa`
+
+Declared ops modules:
+
+- none by design in the current V1 surface
+
+Declared permissions:
+
+- none directly; consumer packages declare stable permission names through foundation and access persists them into the runtime store
+
 ### Permission synchronization
 
 `PermissionSyncService` synchronizes declared foundation permission definitions into the persistent permission store.
@@ -184,6 +231,8 @@ The package emits these access audit events through foundation metadata and runt
 - `access.roles.synchronized`
 - `access.user_role.assigned`
 - `access.user_role.removed`
+
+Those event keys are the same keys declared by `AccessPlatformPackage`, so package metadata and runtime output stay aligned.
 
 Audit writing is controlled through `access.audit.driver`:
 
