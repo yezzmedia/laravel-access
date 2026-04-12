@@ -32,6 +32,7 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 - documented the central foundation install flow and the super-admin role-removal safety behavior in the package README
 - documented the generic `--configure-audit --audit-package=*` flow and the deprecated `--configure-access-audit` compatibility alias
 - documented the implemented security-governance declarations, optional ops-security broker integration, and the corrected doctor-check key names in the package README
+- documented the exact foundation registration surface in the package README, including declared features, audit events, install steps, doctor checks, security entries, and the intentional absence of access-owned ops modules
 
 ## [0.1.0] - 2026-03-30
 
