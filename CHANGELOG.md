@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-13
+
 ### Added
 
 - foundation-driven install workflow through `DefinesInstallSteps`
