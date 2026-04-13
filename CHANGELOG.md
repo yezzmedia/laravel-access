@@ -6,6 +6,16 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-04-13
+
+### Added
+
+- `website:assign-super-admin` package command for assigning the configured bootstrap super-admin role to an existing user by email
+
+### Changed
+
+- aligned package testbench auth user configuration with the bootstrap command runtime path so command coverage exercises the real package-owned assignment flow
+
 ## [0.2.0] - 2026-04-13
 
 ### Added
