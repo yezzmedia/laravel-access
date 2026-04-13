@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use Spatie\Activitylog\Support\ActivityLogger;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use YezzMedia\Access\Console\AssignSuperAdminCommand;
 use YezzMedia\Access\Console\SeedRolesCommand;
 use YezzMedia\Access\Console\SyncPermissionsCommand;
 use YezzMedia\Access\Contracts\AuthorizationAuditWriter;
@@ -40,6 +41,7 @@ class AccessServiceProvider extends PackageServiceProvider
             ->name('laravel-access')
             ->hasConfigFile()
             ->hasCommands([
+                AssignSuperAdminCommand::class,
                 SyncPermissionsCommand::class,
                 SeedRolesCommand::class,
             ]);

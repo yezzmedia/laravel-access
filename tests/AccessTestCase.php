@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schema;
 use Spatie\Activitylog\ActivitylogServiceProvider;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\PermissionServiceProvider;
+use Tests\Fixtures\TestUser;
 use YezzMedia\Access\AccessServiceProvider;
 use YezzMedia\Foundation\Testing\FoundationTestCase;
 
@@ -50,6 +51,7 @@ abstract class AccessTestCase extends FoundationTestCase
             'database' => ':memory:',
             'prefix' => '',
         ]);
+        $app['config']->set('auth.providers.users.model', TestUser::class);
     }
 
     private function ensurePermissionsTableExists(): void
