@@ -26,6 +26,7 @@ class FakePermissionStoreSetup extends PermissionStoreSetup
 
     public function __construct(
         public bool $hasPublishedConfig = false,
+        public bool $hasPublishedAccessConfig = false,
         public bool $hasPublishedMigrations = false,
         public bool $hasReadyStore = false,
         public bool $migrationSucceeds = true,
@@ -35,7 +36,7 @@ class FakePermissionStoreSetup extends PermissionStoreSetup
 
     public function configPublished(): bool
     {
-        return $this->hasPublishedConfig;
+        return $this->hasPublishedConfig && $this->hasPublishedAccessConfig;
     }
 
     public function publishConfig(bool $force = false): void
@@ -43,17 +44,20 @@ class FakePermissionStoreSetup extends PermissionStoreSetup
         $this->calls[] = 'publish_permission_config';
         $this->hasPublishedConfig = true;
         $this->configWasForced = $force;
+
+        $this->publishAccessConfig($force);
     }
 
     public function accessConfigPublished(): bool
     {
-        return $this->hasAccessConfig;
+        return $this->hasPublishedAccessConfig || $this->hasAccessConfig;
     }
 
     public function publishAccessConfig(bool $force = false): void
     {
         $this->calls[] = 'publish_access_config';
         $this->accessConfigWasForced = $force;
+        $this->hasPublishedAccessConfig = true;
         $this->hasAccessConfig = true;
     }
 

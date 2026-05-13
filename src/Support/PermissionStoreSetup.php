@@ -40,7 +40,8 @@ class PermissionStoreSetup
 
     public function configPublished(): bool
     {
-        return File::exists(config_path('permission.php'));
+        return File::exists(config_path('permission.php'))
+            && File::exists(config_path('access.php'));
     }
 
     public function publishConfig(bool $force = false): void
@@ -55,6 +56,8 @@ class PermissionStoreSetup
         }
 
         Artisan::call('vendor:publish', $arguments);
+
+        $this->publishAccessConfig($force);
     }
 
     public function accessConfigPublished(): bool

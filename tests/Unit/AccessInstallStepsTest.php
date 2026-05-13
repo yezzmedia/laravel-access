@@ -47,7 +47,7 @@ function registerAccessInstallPermissionPackage(string $name, array $permissions
 }
 
 it('refreshes the published permission config only when explicitly requested', function (): void {
-    $setup = new FakePermissionStoreSetup(hasPublishedConfig: true);
+    $setup = new FakePermissionStoreSetup(hasPublishedConfig: true, hasPublishedAccessConfig: true);
     $step = new PublishPermissionConfigInstallStep($setup);
 
     expect($step->shouldRun(new InstallContext))->toBeFalse()
@@ -55,8 +55,22 @@ it('refreshes the published permission config only when explicitly requested', f
 
     $step->handle(new InstallContext(refreshPublishedResources: true));
 
-    expect($setup->calls)->toBe(['publish_permission_config'])
-        ->and($setup->configWasForced)->toBeTrue();
+    expect($setup->calls)->toBe(['publish_permission_config', 'publish_access_config'])
+        ->and($setup->configWasForced)->toBeTrue()
+        ->and($setup->accessConfigWasForced)->toBeTrue();
+});
+
+it('publishes the access config when only the spatie permission config already exists', function (): void {
+    $setup = new FakePermissionStoreSetup(hasPublishedConfig: true, hasPublishedAccessConfig: false);
+    $step = new PublishPermissionConfigInstallStep($setup);
+
+    expect($step->shouldRun(new InstallContext))->toBeTrue();
+
+    $step->handle(new InstallContext);
+
+    expect($setup->calls)->toBe(['publish_permission_config', 'publish_access_config'])
+        ->and($setup->hasPublishedConfig)->toBeTrue()
+        ->and($setup->hasPublishedAccessConfig)->toBeTrue();
 });
 
 it('re-runs migration publishing during refresh mode without forcing duplicates', function (): void {
@@ -164,7 +178,7 @@ it('skips role hint seeding during install when role hints are disabled', functi
 });
 
 it('configures access audit persistence only when requested', function (): void {
-    $setup = new FakePermissionStoreSetup(hasPublishedConfig: true);
+    $setup = new FakePermissionStoreSetup(hasPublishedConfig: true, hasPublishedAccessConfig: false);
     app()->instance(PermissionStoreSetup::class, $setup);
     $step = new ConfigureAccessAuditInstallStep($setup);
 

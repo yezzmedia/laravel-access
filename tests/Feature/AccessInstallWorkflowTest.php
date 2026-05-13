@@ -113,6 +113,7 @@ it('configures access audit persistence through the generic audit flow', functio
 it('reuses already prepared access setup and only synchronizes permissions', function (): void {
     $setup = new FakePermissionStoreSetup(
         hasPublishedConfig: true,
+        hasPublishedAccessConfig: true,
         hasPublishedMigrations: true,
         hasReadyStore: true,
     );
@@ -136,6 +137,7 @@ it('reuses already prepared access setup and only synchronizes permissions', fun
 it('refreshes published access resources explicitly after package updates', function (): void {
     $setup = new FakePermissionStoreSetup(
         hasPublishedConfig: true,
+        hasPublishedAccessConfig: true,
         hasPublishedMigrations: true,
         hasReadyStore: true,
     );
@@ -160,6 +162,7 @@ it('refreshes published access resources explicitly after package updates', func
 it('fails clearly when access migrations are published but still pending after an update', function (): void {
     $setup = new FakePermissionStoreSetup(
         hasPublishedConfig: true,
+        hasPublishedAccessConfig: true,
         hasPublishedMigrations: true,
         hasReadyStore: true,
         hasPendingPublishedMigrations: true,
@@ -183,6 +186,7 @@ it('fails clearly when access migrations are published but still pending after a
 it('runs pending published access migrations during install when migrate is explicitly allowed', function (): void {
     $setup = new FakePermissionStoreSetup(
         hasPublishedConfig: true,
+        hasPublishedAccessConfig: true,
         hasPublishedMigrations: true,
         hasReadyStore: true,
         hasPendingPublishedMigrations: true,
@@ -201,6 +205,30 @@ it('runs pending published access migrations during install when migrate is expl
         ->expectsOutputToContain('Skipped install step [publish_permission_config] for package [yezzmedia/laravel-access].')
         ->expectsOutputToContain('Skipped install step [publish_permission_migrations] for package [yezzmedia/laravel-access].')
         ->expectsOutputToContain('Executed install step [ensure_permission_store_ready] for package [yezzmedia/laravel-access].')
+        ->expectsOutputToContain('Executed install step [sync_permissions] for package [yezzmedia/laravel-access].')
+        ->assertSuccessful();
+});
+
+it('publishes the access config during install when only the spatie permission config already exists', function (): void {
+    $setup = new FakePermissionStoreSetup(
+        hasPublishedConfig: true,
+        hasPublishedAccessConfig: false,
+        hasPublishedMigrations: true,
+        hasReadyStore: true,
+    );
+    app()->instance(PermissionStoreSetup::class, $setup);
+
+    $command = artisan('website:install');
+
+    if (is_int($command)) {
+        throw new RuntimeException('Expected pending command for website:install.');
+    }
+
+    $command
+        ->expectsOutputToContain('Status: partial')
+        ->expectsOutputToContain('Executed install step [publish_permission_config] for package [yezzmedia/laravel-access].')
+        ->expectsOutputToContain('Skipped install step [publish_permission_migrations] for package [yezzmedia/laravel-access].')
+        ->expectsOutputToContain('Skipped install step [ensure_permission_store_ready] for package [yezzmedia/laravel-access].')
         ->expectsOutputToContain('Executed install step [sync_permissions] for package [yezzmedia/laravel-access].')
         ->assertSuccessful();
 });
