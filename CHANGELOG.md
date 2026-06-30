@@ -15,6 +15,7 @@ The format is based on Keep a Changelog and this package follows Semantic Versio
 ### Changed
 
 - aligned package testbench auth user configuration with the bootstrap command runtime path so command coverage exercises the real package-owned assignment flow
+- Bumped minimum `yezzmedia/laravel-foundation` dependency to `^0.2`
 
 ## [0.2.0] - 2026-04-13
 
