@@ -18,7 +18,7 @@
         "illuminate/support": "^13.0",
         "spatie/laravel-package-tools": "^1.93",
         "spatie/laravel-permission": "^7.0",
-        "yezzmedia/laravel-foundation": "^0.1"
+        "yezzmedia/laravel-foundation": "^0.2"
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
