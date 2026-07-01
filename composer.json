@@ -1,6 +1,6 @@
 {
     "name": "yezzmedia/laravel-access",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "Persistent roles and permissions package for the Yezz Media Laravel website platform.",
     "type": "library",
     "license": "MIT",
